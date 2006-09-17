@@ -18,7 +18,12 @@
 
 package com.amazon.carbonado.repo.sleepycat;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.amazon.carbonado.Cursor;
 import com.amazon.carbonado.FetchException;
@@ -34,7 +39,10 @@ import com.amazon.carbonado.Trigger;
 
 import com.amazon.carbonado.capability.IndexInfo;
 
+import com.amazon.carbonado.cursor.ArraySortBuffer;
 import com.amazon.carbonado.cursor.EmptyCursor;
+import com.amazon.carbonado.cursor.MergeSortBuffer;
+import com.amazon.carbonado.cursor.SortBuffer;
 
 import com.amazon.carbonado.filter.Filter;
 
@@ -52,8 +60,9 @@ import com.amazon.carbonado.lob.Blob;
 import com.amazon.carbonado.lob.Clob;
 
 import com.amazon.carbonado.qe.BoundaryType;
+import com.amazon.carbonado.qe.QueryEngine;
+import com.amazon.carbonado.qe.StorageAccess;
 
-import com.amazon.carbonado.spi.BaseQueryEngine;
 import com.amazon.carbonado.spi.IndexInfoImpl;
 import com.amazon.carbonado.spi.LobEngine;
 import com.amazon.carbonado.spi.SequenceValueProducer;
@@ -69,7 +78,7 @@ import com.amazon.carbonado.spi.raw.RawUtil;
  *
  * @author Brian S O'Neill
  */
-abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
+abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, StorageAccess<S> {
     /** Constant indicating success */
     protected static final byte[] SUCCESS = new byte[0];
 
@@ -100,8 +109,10 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
     /** Reference to primary database. */
     private Object mPrimaryDatabase;
 
-    /** Reference to subclass of query engine, defined later in this class */
-    private QueryEngine<Txn, S> mQueryEngine;
+    /** Reference to query engine, defined later in this class */
+    private QueryEngine<S> mQueryEngine;
+
+    private Storage<S> mRootStorage;
 
     final TriggerManager<S> mTriggerManager;
 
@@ -139,24 +150,20 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
         return mType;
     }
 
-    public Query<S> query() throws FetchException {
-        return mQueryEngine.getCompiledQuery();
-    }
-
-    public Query<S> query(String filter) throws FetchException, MalformedFilterException {
-        return mQueryEngine.getCompiledQuery(filter);
-    }
-
-    public Query<S> query(Filter<S> filter) throws FetchException, MalformedFilterException {
-        return mQueryEngine.getCompiledQuery(filter);
-    }
-
     public S prepare() {
         return mStorableCodec.instantiate(mRawSupport);
     }
 
-    public BDBRepository getRepository() {
-        return mRepository;
+    public Query<S> query() throws FetchException {
+        return mQueryEngine.query();
+    }
+
+    public Query<S> query(String filter) throws FetchException {
+        return mQueryEngine.query(filter);
+    }
+
+    public Query<S> query(Filter<S> filter) throws FetchException {
+        return mQueryEngine.query(filter);
     }
 
     public boolean addTrigger(Trigger<? super S> trigger) {
@@ -185,6 +192,161 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
         return new IndexInfo[] {
             new IndexInfoImpl(getStorableType().getName(), true, true, propertyNames, directions)
         };
+    }
+
+    public Collection<StorableIndex<S>> getAllIndexes() {
+        return Collections.singletonList(mPrimaryKeyIndex);
+    }
+
+    public Storage<S> storageDelegate(StorableIndex<S> index) {
+        // We're the grunt and don't delegate.
+        return null;
+    }
+
+    public SortBuffer<S> createSortBuffer() {
+        // FIXME: This is messy. If Storables had built-in serialization
+        // support, then MergeSortBuffer would not need a root storage.
+        if (mRootStorage == null) {
+            try {
+                mRootStorage = mRepository.getRootRepository().storageFor(getStorableType());
+            } catch (RepositoryException e) {
+                LogFactory.getLog(BDBStorage.class).warn(null, e);
+                return new ArraySortBuffer<S>();
+            }
+        }
+
+        // FIXME: sort buffer should be on repository access. Also, create abstract
+        // repository access that creates the correct merge sort buffer. And more:
+        // create capability for managing merge sort buffers.
+        return new MergeSortBuffer<S>(mRootStorage);
+    }
+
+    public Cursor<S> fetchAll() throws FetchException {
+        return fetchSubset(null, null,
+                           BoundaryType.OPEN, null,
+                           BoundaryType.OPEN, null,
+                           false, false);
+    }
+
+    public Cursor<S> fetchOne(StorableIndex<S> index,
+                              Object[] identityValues)
+        throws FetchException
+    {
+        // TODO: optimize fetching one by loading storable by primary key
+        return fetchSubset(index, identityValues,
+                           BoundaryType.OPEN, null,
+                           BoundaryType.OPEN, null,
+                           false, false);
+    }
+
+    public Cursor<S> fetchSubset(StorableIndex<S> index,
+                                 Object[] identityValues,
+                                 BoundaryType rangeStartBoundary,
+                                 Object rangeStartValue,
+                                 BoundaryType rangeEndBoundary,
+                                 Object rangeEndValue,
+                                 boolean reverseRange,
+                                 boolean reverseOrder)
+        throws FetchException
+    {
+        BDBTransactionManager<Txn> txnMgr = openTransactionManager();
+
+        if (reverseRange) {
+            {
+                BoundaryType temp = rangeStartBoundary;
+                rangeStartBoundary = rangeEndBoundary;
+                rangeEndBoundary = temp;
+            }
+
+            {
+                Object temp = rangeStartValue;
+                rangeStartValue = rangeEndValue;
+                rangeEndValue = temp;
+            }
+        }
+
+        // Lock out shutdown task.
+        txnMgr.getLock().lock();
+        try {
+            StorableCodec<S> codec = mStorableCodec;
+
+            final byte[] identityKey;
+            if (identityValues == null || identityValues.length == 0) {
+                identityKey = codec.encodePrimaryKeyPrefix();
+            } else {
+                identityKey = codec.encodePrimaryKey(identityValues, 0, identityValues.length);
+            }
+
+            final byte[] startBound;
+            if (rangeStartBoundary == BoundaryType.OPEN) {
+                startBound = identityKey;
+            } else {
+                startBound = createBound(identityValues, identityKey, rangeStartValue, codec);
+                if (!reverseOrder && rangeStartBoundary == BoundaryType.EXCLUSIVE) {
+                    // If key is composite and partial, need to skip trailing
+                    // unspecified keys by adding one and making inclusive.
+                    if (!RawUtil.increment(startBound)) {
+                        return EmptyCursor.getEmptyCursor();
+                    }
+                    rangeStartBoundary = BoundaryType.INCLUSIVE;
+                }
+            }
+
+            final byte[] endBound;
+            if (rangeEndBoundary == BoundaryType.OPEN) {
+                endBound = identityKey;
+            } else {
+                endBound = createBound(identityValues, identityKey, rangeEndValue, codec);
+                if (reverseOrder && rangeEndBoundary == BoundaryType.EXCLUSIVE) {
+                    // If key is composite and partial, need to skip trailing
+                    // unspecified keys by subtracting one and making
+                    // inclusive.
+                    if (!RawUtil.decrement(endBound)) {
+                        return EmptyCursor.getEmptyCursor();
+                    }
+                    rangeEndBoundary = BoundaryType.INCLUSIVE;
+                }
+            }
+
+            final boolean inclusiveStart = rangeStartBoundary != BoundaryType.EXCLUSIVE;
+            final boolean inclusiveEnd = rangeEndBoundary != BoundaryType.EXCLUSIVE;
+
+            try {
+                BDBCursor<Txn, S> cursor = openCursor
+                    (txnMgr,
+                     startBound, inclusiveStart,
+                     endBound, inclusiveEnd,
+                     mStorableCodec.getPrimaryKeyPrefixLength(),
+                     reverseOrder,
+                     getPrimaryDatabase());
+
+                cursor.open();
+                return cursor;
+            } catch (Exception e) {
+                throw toFetchException(e);
+            }
+        } finally {
+            txnMgr.getLock().unlock();
+        }
+    }
+
+    private byte[] createBound(Object[] exactValues, byte[] exactKey, Object rangeValue,
+                               StorableCodec<S> codec) {
+        Object[] values = {rangeValue};
+        if (exactValues == null || exactValues.length == 0) {
+            return codec.encodePrimaryKey(values, 0, 1);
+        }
+
+        byte[] rangeKey = codec.encodePrimaryKey
+            (values, exactValues.length, exactValues.length + 1);
+        byte[] bound = new byte[exactKey.length + rangeKey.length];
+        System.arraycopy(exactKey, 0, bound, 0, exactKey.length);
+        System.arraycopy(rangeKey, 0, bound, exactKey.length, rangeKey.length);
+        return bound;
+    }
+
+    protected BDBRepository getRepository() {
+        return mRepository;
     }
 
     /**
@@ -284,9 +446,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
         mPrimaryKeyIndex = mStorableCodec.getPrimaryKeyIndex();
         mPrimaryDatabase = primaryDatabase;
 
-        mQueryEngine = new QueryEngine<Txn, S>
-            (info, mRepository, this, mPrimaryKeyIndex,
-             mStorableCodec.getPrimaryKeyPrefixLength());
+        mQueryEngine = new QueryEngine<S>(getStorableType(), mRepository);
     }
 
     protected S instantiate(byte[] key, byte[] value) throws FetchException {
@@ -716,141 +876,6 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S> {
 
         public Trigger<? super S> getDeleteTrigger() {
             return mStorage.mTriggerManager.getDeleteTrigger();
-        }
-    }
-
-    private static class QueryEngine<Txn, S extends Storable> extends BaseQueryEngine<S> {
-
-        private final int mMaxPrefix;
-
-        QueryEngine(StorableInfo<S> info,
-                    Repository repo,
-                    BDBStorage<Txn, S> storage,
-                    StorableIndex<S> primaryKeyIndex,
-                    int maxPrefix) {
-            super(info, repo, storage, primaryKeyIndex, null);
-            setMergeSortTempDirectory(storage.mRepository.getMergeSortTempDirectory());
-            mMaxPrefix = maxPrefix;
-        }
-
-        protected Cursor<S> openCursor(StorableIndex<S> index,
-                                       Object[] exactValues,
-                                       BoundaryType rangeStartBoundary,
-                                       Object rangeStartValue,
-                                       BoundaryType rangeEndBoundary,
-                                       Object rangeEndValue,
-                                       boolean reverseRange,
-                                       boolean reverseOrder)
-            throws FetchException
-        {
-            BDBStorage<Txn, S> storage = storage();
-            BDBTransactionManager<Txn> txnMgr = storage.openTransactionManager();
-
-            if (reverseRange) {
-                {
-                    BoundaryType temp = rangeStartBoundary;
-                    rangeStartBoundary = rangeEndBoundary;
-                    rangeEndBoundary = temp;
-                }
-
-                {
-                    Object temp = rangeStartValue;
-                    rangeStartValue = rangeEndValue;
-                    rangeEndValue = temp;
-                }
-            }
-
-            // Lock out shutdown task.
-            txnMgr.getLock().lock();
-            try {
-                StorableCodec<S> codec = storage.mStorableCodec;
-
-                final byte[] exactKey;
-                if (exactValues == null || exactValues.length == 0) {
-                    exactKey = codec.encodePrimaryKeyPrefix();
-                } else {
-                    exactKey = codec.encodePrimaryKey(exactValues, 0, exactValues.length);
-                }
-
-                final byte[] startBound;
-                if (rangeStartBoundary == BoundaryType.OPEN) {
-                    startBound = exactKey;
-                } else {
-                    startBound = createBound(exactValues, exactKey, rangeStartValue, codec);
-                    if (!reverseOrder && rangeStartBoundary == BoundaryType.EXCLUSIVE) {
-                        // If key is composite and partial, need to skip
-                        // trailing unspecified keys by adding one and making
-                        // inclusive.
-                        if (!RawUtil.increment(startBound)) {
-                            return EmptyCursor.getEmptyCursor();
-                        }
-                        rangeStartBoundary = BoundaryType.INCLUSIVE;
-                    }
-                }
-
-                final byte[] endBound;
-                if (rangeEndBoundary == BoundaryType.OPEN) {
-                    endBound = exactKey;
-                } else {
-                    endBound = createBound(exactValues, exactKey, rangeEndValue, codec);
-                    if (reverseOrder && rangeEndBoundary == BoundaryType.EXCLUSIVE) {
-                        // If key is composite and partial, need to skip
-                        // trailing unspecified keys by subtracting one and
-                        // making inclusive.
-                        if (!RawUtil.decrement(endBound)) {
-                            return EmptyCursor.getEmptyCursor();
-                        }
-                        rangeEndBoundary = BoundaryType.INCLUSIVE;
-                    }
-                }
-
-                final boolean inclusiveStart = rangeStartBoundary != BoundaryType.EXCLUSIVE;
-                final boolean inclusiveEnd = rangeEndBoundary != BoundaryType.EXCLUSIVE;
-
-                try {
-                    BDBCursor<Txn, S> cursor = storage.openCursor
-                        (txnMgr,
-                         startBound, inclusiveStart,
-                         endBound, inclusiveEnd,
-                         mMaxPrefix,
-                         reverseOrder,
-                         storage.getPrimaryDatabase());
-
-                    cursor.open();
-                    return cursor;
-                } catch (Exception e) {
-                    throw storage.toFetchException(e);
-                }
-            } finally {
-                txnMgr.getLock().unlock();
-            }
-        }
-
-        private byte[] createBound(Object[] exactValues, byte[] exactKey, Object rangeValue,
-                                   StorableCodec<S> codec) {
-            Object[] values = {rangeValue};
-            if (exactValues == null || exactValues.length == 0) {
-                return codec.encodePrimaryKey(values, 0, 1);
-            }
-
-            byte[] rangeKey = codec.encodePrimaryKey
-                (values, exactValues.length, exactValues.length + 1);
-            byte[] bound = new byte[exactKey.length + rangeKey.length];
-            System.arraycopy(exactKey, 0, bound, 0, exactKey.length);
-            System.arraycopy(rangeKey, 0, bound, exactKey.length, rangeKey.length);
-            return bound;
-        }
-
-        protected Cursor<S> openKeyCursor(StorableIndex<S> index,
-                                          Object[] exactValues)
-            throws FetchException
-        {
-            // TODO: Optimize this case
-            return super.openKeyCursor(index, exactValues);
-        }
-
-        private BDBStorage<Txn, S> storage() {
-            return (BDBStorage<Txn, S>) super.getStorage();
         }
     }
 }

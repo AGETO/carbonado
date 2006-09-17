@@ -291,17 +291,21 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
      * @param tempDir directory to store temp files for merge sorting, or null
      * for default
      */
+    /* FIXME: use common config somehow, since indexed repo needs this too
     public void setMergeSortTempDirectory(String tempDir) {
         mMergeSortTempDir = tempDir;
     }
+    */
 
     /**
      * Returns the directory to use for creating temporary files needed for
      * merge sorting. If null, the default temporary file directory is used.
      */
+    /* FIXME: use common config somehow, since indexed repo needs this too
     public String getMergeSortTempDirectory() {
         return mMergeSortTempDir;
     }
+    */
 
     /**
      * Specify that all BDB databases should reside in one file, except for log

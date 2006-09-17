@@ -57,6 +57,9 @@ import com.amazon.carbonado.info.StorableIntrospector;
 import com.amazon.carbonado.layout.LayoutCapability;
 import com.amazon.carbonado.layout.LayoutFactory;
 
+import com.amazon.carbonado.qe.RepositoryAccess;
+import com.amazon.carbonado.qe.StorageAccess;
+
 import com.amazon.carbonado.spi.ExceptionTransformer;
 import com.amazon.carbonado.spi.LobEngine;
 import com.amazon.carbonado.spi.SequenceValueGenerator;
@@ -75,6 +78,7 @@ import com.amazon.carbonado.spi.raw.StorableCodecFactory;
  */
 abstract class BDBRepository<Txn>
     implements Repository,
+               RepositoryAccess,
                IndexInfoCapability,
                CheckpointCapability,
                EnvironmentCapability,
@@ -166,7 +170,8 @@ abstract class BDBRepository<Txn>
         mDataHome = builder.getDataHomeFile();
         mEnvHome = builder.getEnvironmentHomeFile();
         mSingleFileName = builder.getSingleFileName();
-        mMergeSortTempDir = builder.getMergeSortTempDirectory();
+        // FIXME: see comments in builder
+        mMergeSortTempDir = null; //builder.getMergeSortTempDirectory();
     }
 
     public String getName() {
@@ -174,7 +179,7 @@ abstract class BDBRepository<Txn>
     }
 
     @SuppressWarnings("unchecked")
-    public <S extends Storable> Storage<S> storageFor(Class<S> type)
+    public <S extends Storable> BDBStorage<Txn, S> storageFor(Class<S> type)
         throws MalformedTypeException, RepositoryException
     {
         // Acquire lock to prevent databases from being opened during shutdown.
@@ -193,7 +198,7 @@ abstract class BDBRepository<Txn>
                         }
                         mStorages.put(type, storage);
                     }
-                    return (Storage<S>) storage;
+                    return (BDBStorage<Txn, S>) storage;
                 } finally {
                     mShutdownLock.unlock();
                 }
@@ -377,6 +382,16 @@ abstract class BDBRepository<Txn>
         }
     }
 
+    public Repository getRootRepository() {
+        return mRootRef.get();
+    }
+
+    public <S extends Storable> StorageAccess<S> storageAccessFor(Class<S> type)
+        throws RepositoryException
+    {
+        return storageFor(type);
+    }
+
     @Override
     protected void finalize() {
         close();
@@ -440,10 +455,6 @@ abstract class BDBRepository<Txn>
 
     Log getLog() {
         return mLog;
-    }
-
-    Repository getRootRepository() {
-        return mRootRef.get();
     }
 
     StorableCodecFactory getStorableCodecFactory() {
