@@ -42,6 +42,7 @@ import com.amazon.carbonado.capability.IndexInfo;
 import com.amazon.carbonado.cursor.ArraySortBuffer;
 import com.amazon.carbonado.cursor.EmptyCursor;
 import com.amazon.carbonado.cursor.MergeSortBuffer;
+import com.amazon.carbonado.cursor.SingletonCursor;
 import com.amazon.carbonado.cursor.SortBuffer;
 
 import com.amazon.carbonado.filter.Filter;
@@ -232,11 +233,12 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
                               Object[] identityValues)
         throws FetchException
     {
-        // TODO: optimize fetching one by loading storable by primary key
-        return fetchSubset(index, identityValues,
-                           BoundaryType.OPEN, null,
-                           BoundaryType.OPEN, null,
-                           false, false);
+        byte[] key = mStorableCodec.encodePrimaryKey(identityValues);
+        byte[] value = mRawSupport.tryLoad(key);
+        if (value == null) {
+            return EmptyCursor.the();
+        }
+        return new SingletonCursor<S>(instantiate(key, value));
     }
 
     public Cursor<S> fetchSubset(StorableIndex<S> index,
@@ -512,7 +514,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
      */
     protected abstract boolean db_isEmpty(Txn txn, Object database, boolean rmw) throws Exception;
 
-    protected CompactionCapability.Result db_compact
+    protected CompactionCapability.Result<S> db_compact
         (Txn txn, Object database, byte[] start, byte[] end)
         throws Exception
     {
