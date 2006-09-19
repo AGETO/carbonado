@@ -286,7 +286,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
                     // If key is composite and partial, need to skip trailing
                     // unspecified keys by adding one and making inclusive.
                     if (!RawUtil.increment(startBound)) {
-                        return EmptyCursor.getEmptyCursor();
+                        return EmptyCursor.the();
                     }
                     rangeStartBoundary = BoundaryType.INCLUSIVE;
                 }
@@ -302,7 +302,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
                     // unspecified keys by subtracting one and making
                     // inclusive.
                     if (!RawUtil.decrement(endBound)) {
-                        return EmptyCursor.getEmptyCursor();
+                        return EmptyCursor.the();
                     }
                     rangeEndBoundary = BoundaryType.INCLUSIVE;
                 }
