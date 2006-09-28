@@ -222,6 +222,11 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
         return new MergeSortBuffer<S>(mRootStorage);
     }
 
+    public long countAll() throws FetchException {
+        // Return -1 to indicate default algorithmn should be used.
+        return -1;
+    }
+
     public Cursor<S> fetchAll() throws FetchException {
         return fetchSubset(null, null,
                            BoundaryType.OPEN, null,
