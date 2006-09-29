@@ -23,6 +23,7 @@ package com.amazon.carbonado.repo.sleepycat;
  *
  * @author Brian S O'Neill
  */
+// FIXME: Replace with BDBProduct and use Strings "DB", "JE", and "HA".
 public enum BDBVersion {
     /** BDB version 4.1 */
     DB4_1,
