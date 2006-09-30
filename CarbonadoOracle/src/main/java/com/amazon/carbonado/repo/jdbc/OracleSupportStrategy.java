@@ -28,7 +28,6 @@ import java.sql.SQLException;
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Transaction;
-import com.amazon.carbonado.spi.BaseQuery;
 
 /**
  *
@@ -126,6 +125,7 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
         }
     }
 
+    /* FIXME
     boolean printPlan(Appendable app, int indentLevel, String statement)
         throws FetchException, IOException
     {
@@ -278,4 +278,5 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
             st.close();
         }
     }
+    */
 }
