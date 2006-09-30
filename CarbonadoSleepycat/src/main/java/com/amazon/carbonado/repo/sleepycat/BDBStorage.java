@@ -62,6 +62,7 @@ import com.amazon.carbonado.lob.Clob;
 
 import com.amazon.carbonado.qe.BoundaryType;
 import com.amazon.carbonado.qe.QueryEngine;
+import com.amazon.carbonado.qe.QueryExecutorFactory;
 import com.amazon.carbonado.qe.StorageAccess;
 
 import com.amazon.carbonado.spi.IndexInfoImpl;
@@ -193,6 +194,10 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
         return new IndexInfo[] {
             new IndexInfoImpl(getStorableType().getName(), true, true, propertyNames, directions)
         };
+    }
+
+    public QueryExecutorFactory<S> getQueryExecutorFactory() {
+        return mQueryEngine;
     }
 
     public Collection<StorableIndex<S>> getAllIndexes() {
