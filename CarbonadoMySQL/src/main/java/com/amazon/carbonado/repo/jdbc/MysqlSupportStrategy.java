@@ -28,7 +28,6 @@ import java.sql.SQLException;
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Transaction;
-import com.amazon.carbonado.spi.BaseQuery;
 
 /**
  *
