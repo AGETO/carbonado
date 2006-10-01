@@ -21,9 +21,11 @@ package com.amazon.carbonado.repo.jdbc;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import java.sql.SQLException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-import oracle.sql.BLOB;
+import java.sql.Blob;
+import java.sql.SQLException;
 
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.PersistException;
@@ -34,64 +36,102 @@ import com.amazon.carbonado.PersistException;
  * @author Brian S O'Neill
  */
 class OracleBlob extends JDBCBlob {
-    OracleBlob(JDBCRepository repo, BLOB blob, JDBCBlobLoader loader) {
+    OracleBlob(JDBCRepository repo, Blob blob, JDBCBlobLoader loader) {
         super(repo, blob, loader);
     }
 
+    @Override
     public InputStream openInputStream() throws FetchException {
         return openInputStream(0);
     }
 
+    @Override
     public InputStream openInputStream(long pos) throws FetchException {
+        Method m = support().mBLOB_getBinaryStream;
+
+        if (m == null) {
+            return super.openInputStream(pos);
+        }
+
         try {
-            return getOracleBlobForFetch().getBinaryStream(pos);
-        } catch (SQLException e) {
+            return (InputStream) m.invoke(getInternalBlobForFetch(), pos);
+        } catch (InvocationTargetException e) {
+            throw mRepo.toFetchException(e.getCause());
+        } catch (Exception e) {
             throw mRepo.toFetchException(e);
         }
     }
 
+    @Override
     public InputStream openInputStream(long pos, int bufferSize) throws FetchException {
         return openInputStream(pos);
     }
 
+    @Override
     public long getLength() throws FetchException {
+        Method m = support().mBLOB_length;
+
+        if (m == null) {
+            return super.getLength();
+        }
+
         try {
-            return getOracleBlobForFetch().length();
-        } catch (SQLException e) {
+            return (Long) m.invoke(getInternalBlobForFetch());
+        } catch (InvocationTargetException e) {
+            throw mRepo.toFetchException(e.getCause());
+        } catch (Exception e) {
             throw mRepo.toFetchException(e);
         }
     }
 
+    @Override
     public OutputStream openOutputStream() throws PersistException {
         return openOutputStream(0);
     }
 
+    @Override
     public OutputStream openOutputStream(long pos) throws PersistException {
+        Method m = support().mBLOB_getBinaryOutputStream;
+
+        if (m == null) {
+            return super.openOutputStream(pos);
+        }
+
         try {
-            return getOracleBlobForPersist().getBinaryOutputStream(pos);
-        } catch (SQLException e) {
+            return (OutputStream) m.invoke(getInternalBlobForPersist(), pos);
+        } catch (InvocationTargetException e) {
+            throw mRepo.toPersistException(e.getCause());
+        } catch (Exception e) {
             throw mRepo.toPersistException(e);
         }
     }
 
+    @Override
     public OutputStream openOutputStream(long pos, int bufferSize) throws PersistException {
         return openOutputStream(pos);
     }
 
+    @Override
     public void setLength(long length) throws PersistException {
         // FIXME: Add special code to support increasing length
+ 
+        Method m = support().mBLOB_trim;
+
+        if (m == null) {
+            super.setLength(length);
+            return;
+        }
+
         try {
-            getOracleBlobForPersist().trim(length);
-        } catch (SQLException e) {
+            m.invoke(getInternalBlobForPersist(), length);
+        } catch (InvocationTargetException e) {
+            throw mRepo.toPersistException(e.getCause());
+        } catch (Exception e) {
             throw mRepo.toPersistException(e);
         }
     }
 
-    private BLOB getOracleBlobForFetch() throws FetchException {
-        return (BLOB) getInternalBlobForFetch();
-    }
-
-    private BLOB getOracleBlobForPersist() throws PersistException {
-        return (BLOB) getInternalBlobForPersist();
+    private OracleSupportStrategy support() {
+        return (OracleSupportStrategy) mRepo.getSupportStrategy();
     }
 }

@@ -19,11 +19,17 @@
 package com.amazon.carbonado.repo.jdbc;
 
 import java.io.IOException;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
+
+import org.apache.commons.logging.LogFactory;
 
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.PersistException;
@@ -39,32 +45,102 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
 
     private static final String PLAN_TABLE_NAME = "TEMP_CARBONADO_PLAN_TABLE";
 
+    final Method mBLOB_empty_lob;
+    final Method mBLOB_getBinaryStream;
+    final Method mBLOB_length;
+    final Method mBLOB_getBinaryOutputStream;
+    final Method mBLOB_trim;
+
+    final Method mCLOB_empty_lob;
+    final Method mCLOB_getCharacterStream;
+    final Method mCLOB_length;
+    final Method mCLOB_getCharacterOutputStream;
+    final Method mCLOB_trim;
+
     protected OracleSupportStrategy(JDBCRepository repo) {
         super(repo);
+
+        // Access all the custom oracle.sql.BLOB methods via reflection.
+        {
+            Method blob_empty_lob = null;
+            Method blob_getBinaryStream = null;
+            Method blob_length = null;
+            Method blob_getBinaryOutputStream = null;
+            Method blob_trim = null;
+
+            try {
+                Class blobClass = Class.forName("oracle.sql.BLOB");
+
+                blob_empty_lob = blobClass.getMethod("empty_lob");
+                blob_getBinaryStream = blobClass.getMethod("getBinaryStream", long.class);
+                blob_length = blobClass.getMethod("length");
+                blob_getBinaryOutputStream =
+                    blobClass.getMethod("getBinaryOutputStream", long.class);
+                blob_trim = blobClass.getMethod("trim", long.class);
+            } catch (ClassNotFoundException e) {
+                LogFactory.getLog(getClass()).warn("Unable to find Oracle BLOB class", e);
+            } catch (NoSuchMethodException e) {
+                LogFactory.getLog(getClass()).warn("Unable to find Oracle BLOB method", e);
+            }
+
+            mBLOB_empty_lob = blob_empty_lob;
+            mBLOB_getBinaryStream = blob_getBinaryStream;
+            mBLOB_length = blob_length;
+            mBLOB_getBinaryOutputStream = blob_getBinaryOutputStream;
+            mBLOB_trim = blob_trim;
+        }
+
+        // Access all the custom oracle.sql.CLOB methods via reflection.
+        {
+            Method clob_empty_lob = null;
+            Method clob_getCharacterStream = null;
+            Method clob_length = null;
+            Method clob_getCharacterOutputStream = null;
+            Method clob_trim = null;
+
+            try {
+                Class clobClass = Class.forName("oracle.sql.CLOB");
+                
+                clob_empty_lob = clobClass.getMethod("empty_lob");
+                clob_getCharacterStream = clobClass.getMethod("getCharacterStream", long.class);
+                clob_length = clobClass.getMethod("length");
+                clob_getCharacterOutputStream =
+                    clobClass.getMethod("getCharacterOutputStream", long.class);
+                clob_trim = clobClass.getMethod("trim", long.class);
+            } catch (ClassNotFoundException e) {
+                LogFactory.getLog(getClass()).warn("Unable to find Oracle CLOB class", e);
+            } catch (NoSuchMethodException e) {
+                LogFactory.getLog(getClass()).warn("Unable to find Oracle CLOB method", e);
+            }
+
+            mCLOB_empty_lob = clob_empty_lob;
+            mCLOB_getCharacterStream = clob_getCharacterStream;
+            mCLOB_length = clob_length;
+            mCLOB_getCharacterOutputStream = clob_getCharacterOutputStream;
+            mCLOB_trim = clob_trim;
+        }
     }
 
+    @Override
     JDBCExceptionTransformer createExceptionTransformer() {
         return new OracleExceptionTransformer();
     }
 
+    @Override
     String createSequenceQuery(String sequenceName) {
         return new StringBuilder(25 + sequenceName.length())
             .append("SELECT ").append(sequenceName).append(".NEXTVAL FROM DUAL")
             .toString();
     }
 
+    @Override
     JDBCBlob convertBlob(java.sql.Blob blob, JDBCBlobLoader loader) {
-        if (blob instanceof oracle.sql.BLOB) {
-            return new OracleBlob(mRepo, (oracle.sql.BLOB) blob, loader);
-        }
-        return super.convertBlob(blob, loader);
+        return new OracleBlob(mRepo, blob, loader);
     }
 
+    @Override
     JDBCClob convertClob(java.sql.Clob clob, JDBCClobLoader loader) {
-        if (clob instanceof oracle.sql.CLOB) {
-            return new OracleClob(mRepo, (oracle.sql.CLOB) clob, loader);
-        }
-        return super.convertClob(clob, loader);
+        return new OracleClob(mRepo, clob, loader);
     }
 
     /**
@@ -72,6 +148,7 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
      * @throws PersistException instead of FetchException since this code is
      * called during an insert operation
      */
+    @Override
     com.amazon.carbonado.lob.Blob setBlobValue(PreparedStatement ps, int column,
                                                com.amazon.carbonado.lob.Blob blob)
         throws PersistException
@@ -79,8 +156,18 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
         try {
             long length = blob.getLength();
             if (length > LOB_CHUNK_LIMIT || ((long) ((int) length)) != length) {
-                ps.setBlob(column, oracle.sql.BLOB.empty_lob());
-                return blob;
+                if (mBLOB_empty_lob == null) {
+                    return super.setBlobValue(ps, column, blob);
+                }
+
+                try {
+                    ps.setBlob(column, (java.sql.Blob) mBLOB_empty_lob.invoke(null));
+                    return blob;
+                } catch (InvocationTargetException e) {
+                    throw mRepo.toPersistException(e.getCause());
+                } catch (Exception e) {
+                    throw mRepo.toPersistException(e);
+                }
             }
 
             if (blob instanceof OracleBlob) {
@@ -100,6 +187,7 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
     /**
      * @return original clob if too large and post-insert update is required, null otherwise
      */
+    @Override
     com.amazon.carbonado.lob.Clob setClobValue(PreparedStatement ps, int column,
                                                com.amazon.carbonado.lob.Clob clob)
         throws PersistException
@@ -107,8 +195,18 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
         try {
             long length = clob.getLength();
             if (length > LOB_CHUNK_LIMIT || ((long) ((int) length)) != length) {
-                ps.setClob(column, oracle.sql.CLOB.empty_lob());
-                return clob;
+                if (mCLOB_empty_lob == null) {
+                    return super.setClobValue(ps, column, clob);
+                }
+
+                try {
+                    ps.setClob(column, (java.sql.Clob) mCLOB_empty_lob.invoke(null));
+                    return clob;
+                } catch (InvocationTargetException e) {
+                    throw mRepo.toPersistException(e.getCause());
+                } catch (Exception e) {
+                    throw mRepo.toPersistException(e);
+                }
             }
 
             if (clob instanceof OracleClob) {
@@ -126,6 +224,7 @@ class OracleSupportStrategy extends JDBCSupportStrategy {
     }
 
     /* FIXME
+    @Override
     boolean printPlan(Appendable app, int indentLevel, String statement)
         throws FetchException, IOException
     {
