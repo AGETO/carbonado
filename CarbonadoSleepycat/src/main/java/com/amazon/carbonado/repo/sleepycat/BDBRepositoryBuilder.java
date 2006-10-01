@@ -47,7 +47,7 @@ import com.amazon.carbonado.ConfigurationException;
  * <pre>
  * BDBRepositoryBuilder builder = new BDBRepositoryBuilder();
  *
- * builder.setVersion("je2.0");
+ * builder.setProduct("JE");
  * builder.setName("test");
  * builder.setEnvironmentHome("/tmp/testRepo");
  * builder.setTransactionNoSync(true);
@@ -72,13 +72,13 @@ import com.amazon.carbonado.ConfigurationException;
  */
 public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
 
-    private static final BDBVersion DEFAULT_VERSION = BDBVersion.JE2_0;
+    private static final BDBProduct DEFAULT_PRODUCT = BDBProduct.JE;
 
     private static final int DEFAULT_CHECKPOINT_INTERVAL = 10000;
 
     private String mName;
     private boolean mIsMaster = true;
-    private BDBVersion mVersion = DEFAULT_VERSION;
+    private BDBProduct mProduct = DEFAULT_PRODUCT;
     private File mEnvHome;
     private String mMergeSortTempDir;
     private File mDataHome;
@@ -143,14 +143,6 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
             return null;
         }
 
-        /*
-        if (!getVersion().equals(repo.getVersionMajorMinor())) {
-            LogFactory.getLog(BDBRepository.class).warn
-                ("Actual BDB repository version doesn't match requested version: " +
-                 repo.getVersionMajorMinor() + " != " + mVersion);
-        }
-        */
-
         rootRef.set(repo);
         return repo;
     }
@@ -172,34 +164,32 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
     }
 
     /**
-     * Sets the BDB version to use, which defaults to je2.0. The version string
-     * consists of a product abbreviation followed by the product major.minor
-     * release number. Versions supported are db4.1, db4.3+, and je2.0+. If not
-     * supported, an IllegalArgumentException is thrown.
+     * Sets the BDB product to use, which defaults to JE. Also supported is DB
+     * and DB_HA. If not supported, an IllegalArgumentException is thrown.
      */
-    public void setVersion(String version) {
-        mVersion = version == null ? DEFAULT_VERSION : BDBVersion.forString(version);
+    public void setProduct(String product) {
+        mProduct = product == null ? DEFAULT_PRODUCT : BDBProduct.forString(product);
     }
 
     /**
-     * Returns the BDB version to use, which is je2.0 by default.
+     * Returns the BDB product to use, which is JE by default.
      */
-    public String getVersion() {
-        return mVersion.toString();
+    public String getProduct() {
+        return mProduct.toString();
     }
 
     /**
-     * Sets the BDB version to use, which defaults to JE2_0.
+     * Sets the BDB product to use, which defaults to JE.
      */
-    public void setBDBVersion(BDBVersion version) {
-        mVersion = version == null ? DEFAULT_VERSION : version;
+    public void setBDBProduct(BDBProduct product) {
+        mProduct = product == null ? DEFAULT_PRODUCT : product;
     }
 
     /**
-     * Returns the BDB version to use, which is JE2_0 by default.
+     * Returns the BDB product to use, which is JE by default.
      */
-    public BDBVersion getBDBVersion() {
-        return mVersion;
+    public BDBProduct getBDBProduct() {
+        return mProduct;
     }
 
     /**
@@ -684,7 +674,7 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
             } catch (NoSuchMethodException e) {
                 error = e;
             }
-            messages.add("BDB version \"" + getVersion() + "\" not supported: " + error);
+            messages.add("BDB product \"" + getProduct() + "\" not supported: " + error);
         }
 
         File envHome = getEnvironmentHomeFile();
@@ -699,14 +689,14 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
 
     /**
      * Looks up appropriate repository via reflection, whose name is derived
-     * from the BDB version string.
+     * from the BDB product string.
      */
     @SuppressWarnings("unchecked")
     private Constructor<BDBRepository> getRepositoryConstructor()
         throws ClassCastException, ClassNotFoundException, NoSuchMethodException
     {
         String className = getClass().getPackage().getName() + '.' +
-            getBDBVersion().name() + "_Repository";
+            getBDBProduct().name() + "_Repository";
         Class repoClass = Class.forName(className);
         if (BDBRepository.class.isAssignableFrom(repoClass)) {
             return repoClass.getDeclaredConstructor
