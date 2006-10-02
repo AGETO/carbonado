@@ -130,14 +130,6 @@ abstract class BDBCursor<Txn, S extends Storable> extends RawCursor<S> {
         }
     }
 
-    protected boolean deleteCurrent() throws PersistException {
-        try {
-            return cursor_delete();
-        } catch (Exception e) {
-            throw mStorage.toPersistException(e);
-        }
-    }
-
     protected S instantiateCurrent() throws FetchException {
         return mStorage.instantiate(primaryKey_getData(), data_getData());
     }
@@ -305,6 +297,4 @@ abstract class BDBCursor<Txn, S extends Storable> extends RawCursor<S> {
     protected abstract boolean cursor_getPrev() throws Exception;
 
     protected abstract boolean cursor_getPrevNoDup() throws Exception;
-
-    protected abstract boolean cursor_delete() throws Exception;
 }
