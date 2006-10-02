@@ -93,6 +93,7 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
     private Boolean mDatabasesTransactional = null;
     private Map<Class<?>, Integer> mDatabasePageSizes;
     private boolean mPrivate;
+    private boolean mMultiversion;
     private boolean mRunCheckpointer = true;
     private int mCheckpointInterval = DEFAULT_CHECKPOINT_INTERVAL;
     private boolean mRunDeadlockDetector = true;
@@ -505,6 +506,23 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
      */
     public boolean isPrivate() {
         return mPrivate;
+    }
+
+    /**
+     * Set true to enable multiversion concurrency control (MVCC) on BDB
+     * environment. This enables snapshot isolation, and is it is not supported
+     * by all BDB products and versions.
+     */
+    public void setMultiversion(boolean multiversion) {
+        mMultiversion = multiversion;
+    }
+
+    /**
+     * Returns false by default because multiversion concurrency control (MVCC)
+     * is not enabled.
+     */
+    public boolean isMultiversion() {
+        return mMultiversion;
     }
 
     /**

@@ -176,6 +176,9 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         if (level == IsolationLevel.READ_COMMITTED) {
             // Degree 2 isolation not supported, so promote.
             return IsolationLevel.REPEATABLE_READ;
+        } else if (level == IsolationLevel.SNAPSHOT) {
+            // Not supported.
+            return null;
         } else if (level == IsolationLevel.SERIALIZABLE) {
             // Not supported.
             return null;
@@ -227,7 +230,9 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     }
 
     protected void env_close() throws Exception {
-        mEnv.close(0);
+        if (mEnv != null) {
+            mEnv.close(0);
+        }
     }
 
     protected <S extends Storable> BDBStorage<DbTxn, S> createStorage(Class<S> type)
