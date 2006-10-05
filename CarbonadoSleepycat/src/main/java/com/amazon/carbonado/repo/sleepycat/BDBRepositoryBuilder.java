@@ -33,9 +33,10 @@ import com.amazon.carbonado.Storable;
 
 import com.amazon.carbonado.repo.indexed.IndexedRepositoryBuilder;
 
+import com.amazon.carbonado.raw.GenericStorableCodecFactory;
+import com.amazon.carbonado.raw.StorableCodecFactory;
+
 import com.amazon.carbonado.spi.AbstractRepositoryBuilder;
-import com.amazon.carbonado.spi.raw.GenericStorableCodecFactory;
-import com.amazon.carbonado.spi.raw.StorableCodecFactory;
 
 import com.amazon.carbonado.util.ThrowUnchecked;
 

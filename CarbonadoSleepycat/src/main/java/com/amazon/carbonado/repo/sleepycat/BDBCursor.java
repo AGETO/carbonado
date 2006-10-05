@@ -23,8 +23,8 @@ import com.amazon.carbonado.IsolationLevel;
 import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Storable;
 
-import com.amazon.carbonado.spi.raw.RawCursor;
-import com.amazon.carbonado.spi.raw.RawUtil;
+import com.amazon.carbonado.raw.RawCursor;
+import com.amazon.carbonado.raw.RawUtil;
 
 /**
  *

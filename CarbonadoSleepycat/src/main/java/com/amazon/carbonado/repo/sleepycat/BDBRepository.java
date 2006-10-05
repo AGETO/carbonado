@@ -60,11 +60,12 @@ import com.amazon.carbonado.layout.LayoutFactory;
 import com.amazon.carbonado.qe.RepositoryAccess;
 import com.amazon.carbonado.qe.StorageAccess;
 
+import com.amazon.carbonado.raw.StorableCodecFactory;
+
 import com.amazon.carbonado.spi.ExceptionTransformer;
 import com.amazon.carbonado.spi.LobEngine;
 import com.amazon.carbonado.spi.SequenceValueGenerator;
 import com.amazon.carbonado.spi.SequenceValueProducer;
-import com.amazon.carbonado.spi.raw.StorableCodecFactory;
 
 /**
  * Repository implementation backed by a Berkeley DB. Data is encoded in the

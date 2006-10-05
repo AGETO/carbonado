@@ -65,16 +65,16 @@ import com.amazon.carbonado.qe.QueryEngine;
 import com.amazon.carbonado.qe.QueryExecutorFactory;
 import com.amazon.carbonado.qe.StorageAccess;
 
+import com.amazon.carbonado.raw.StorableCodec;
+import com.amazon.carbonado.raw.StorableCodecFactory;
+import com.amazon.carbonado.raw.RawSupport;
+import com.amazon.carbonado.raw.RawUtil;
+
 import com.amazon.carbonado.spi.IndexInfoImpl;
 import com.amazon.carbonado.spi.LobEngine;
 import com.amazon.carbonado.spi.SequenceValueProducer;
 import com.amazon.carbonado.spi.StorableIndexSet;
 import com.amazon.carbonado.spi.TriggerManager;
-
-import com.amazon.carbonado.spi.raw.StorableCodec;
-import com.amazon.carbonado.spi.raw.StorableCodecFactory;
-import com.amazon.carbonado.spi.raw.RawSupport;
-import com.amazon.carbonado.spi.raw.RawUtil;
 
 /**
  *
