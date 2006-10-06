@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.IdentityHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -39,7 +40,6 @@ import com.amazon.carbonado.IsolationLevel;
 import com.amazon.carbonado.MalformedTypeException;
 import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Repository;
-import static com.amazon.carbonado.RepositoryBuilder.RepositoryReference;
 import com.amazon.carbonado.RepositoryException;
 import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.Storage;
@@ -90,7 +90,7 @@ abstract class BDBRepository<Txn>
 
     private final String mName;
     private final boolean mIsMaster;
-    private final RepositoryReference mRootRef;
+    private final AtomicReference<Repository> mRootRef;
     private final StorableCodecFactory mStorableCodecFactory;
     private final Repository mMetadataRepository;
     private final ExceptionTransformer mExTransformer;
@@ -139,7 +139,7 @@ abstract class BDBRepository<Txn>
      * @throws IllegalArgumentException if name or environment home is null
      */
     @SuppressWarnings("unchecked")
-    BDBRepository(RepositoryReference rootRef,
+    BDBRepository(AtomicReference<Repository> rootRef,
                   BDBRepositoryBuilder builder,
                   ExceptionTransformer exTransformer)
         throws ConfigurationException

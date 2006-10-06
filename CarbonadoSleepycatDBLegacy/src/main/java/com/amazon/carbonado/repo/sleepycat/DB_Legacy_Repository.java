@@ -19,6 +19,9 @@
 package com.amazon.carbonado.repo.sleepycat;
 
 import java.io.File;
+
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.sleepycat.db.Db;
 import com.sleepycat.db.DbException;
 import com.sleepycat.db.DbEnv;
@@ -26,8 +29,8 @@ import com.sleepycat.db.DbTxn;
 
 import com.amazon.carbonado.ConfigurationException;
 import com.amazon.carbonado.IsolationLevel;
+import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryException;
-import static com.amazon.carbonado.RepositoryBuilder.RepositoryReference;
 import com.amazon.carbonado.Storable;
 
 /**
@@ -52,7 +55,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
      * @throws IllegalArgumentException if name or environment home is null
      * @throws RepositoryException if there is a problem opening the environment
      */
-    DB_Legacy_Repository(RepositoryReference rootRef, BDBRepositoryBuilder builder)
+    DB_Legacy_Repository(AtomicReference<Repository> rootRef, BDBRepositoryBuilder builder)
         throws RepositoryException
     {
         super(rootRef, builder, DB_Legacy_ExceptionTransformer.getInstance());

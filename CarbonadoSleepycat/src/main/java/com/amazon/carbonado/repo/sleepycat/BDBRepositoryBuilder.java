@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryException;
 import com.amazon.carbonado.Storable;
@@ -108,7 +110,7 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
     public BDBRepositoryBuilder() {
     }
 
-    public Repository build(RepositoryReference rootRef) throws RepositoryException {
+    public Repository build(AtomicReference<Repository> rootRef) throws RepositoryException {
         if (mIndexSupport) {
             // Wrap BDBRepository with IndexedRepository.
 
@@ -719,7 +721,7 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
         Class repoClass = Class.forName(className);
         if (BDBRepository.class.isAssignableFrom(repoClass)) {
             return repoClass.getDeclaredConstructor
-                (RepositoryReference.class, BDBRepositoryBuilder.class);
+                (AtomicReference.class, BDBRepositoryBuilder.class);
         }
         throw new ClassCastException("Not an instance of BDBRepository: " + repoClass.getName());
     }
