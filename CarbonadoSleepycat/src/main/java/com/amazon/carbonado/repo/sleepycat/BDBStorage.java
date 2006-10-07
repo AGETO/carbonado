@@ -131,7 +131,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
         mRepository = repository;
         mType = type;
         mRawSupport = new Support<Txn, S>(repository, this);
-        mTriggerManager = new TriggerManager<S>();
+        mTriggerManager = new TriggerManager<S>(type, repository.mTriggerFactories);
         try {
             // Ask if any lobs via static method first, to prevent stack
             // overflow that occurs when creating BDBStorage instances for

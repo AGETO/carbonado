@@ -34,6 +34,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.cojen.util.WeakIdentityMap;
 
+import com.amazon.carbonado.ConfigurationException;
 import com.amazon.carbonado.Cursor;
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.IsolationLevel;
@@ -44,7 +45,7 @@ import com.amazon.carbonado.RepositoryException;
 import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.Storage;
 import com.amazon.carbonado.Transaction;
-import com.amazon.carbonado.ConfigurationException;
+import com.amazon.carbonado.TriggerFactory;
 
 import com.amazon.carbonado.capability.Capability;
 import com.amazon.carbonado.capability.IndexInfo;
@@ -90,6 +91,7 @@ abstract class BDBRepository<Txn>
 
     private final String mName;
     private final boolean mIsMaster;
+    final Iterable<TriggerFactory> mTriggerFactories;
     private final AtomicReference<Repository> mRootRef;
     private final StorableCodecFactory mStorableCodecFactory;
     private final Repository mMetadataRepository;
@@ -152,6 +154,7 @@ abstract class BDBRepository<Txn>
 
         mName = builder.getName();
         mIsMaster = builder.isMaster();
+        mTriggerFactories = builder.triggerFactories();
         mRootRef = rootRef;
         mMetadataRepository = builder.getMetadataRepository();
         mExTransformer = exTransformer;

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryException;
 import com.amazon.carbonado.Storable;
+import com.amazon.carbonado.TriggerFactory;
 
 import com.amazon.carbonado.repo.indexed.IndexedRepositoryBuilder;
 
@@ -706,6 +707,11 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
                 messages.add("environment home is not a directory: " + envHome);
             }
         }
+    }
+
+    // Open up protected access
+    Iterable<TriggerFactory> triggerFactories() {
+        return super.getTriggerFactories();
     }
 
     /**
