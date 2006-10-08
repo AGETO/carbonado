@@ -94,7 +94,6 @@ abstract class BDBRepository<Txn>
     final Iterable<TriggerFactory> mTriggerFactories;
     private final AtomicReference<Repository> mRootRef;
     private final StorableCodecFactory mStorableCodecFactory;
-    private final Repository mMetadataRepository;
     private final ExceptionTransformer mExTransformer;
     private final Map<Class<?>, BDBStorage<Txn, ?>> mStorages;
     private final Map<String, SequenceValueGenerator> mSequences;
@@ -154,9 +153,8 @@ abstract class BDBRepository<Txn>
 
         mName = builder.getName();
         mIsMaster = builder.isMaster();
-        mTriggerFactories = builder.triggerFactories();
+        mTriggerFactories = builder.getTriggerFactories();
         mRootRef = rootRef;
-        mMetadataRepository = builder.getMetadataRepository();
         mExTransformer = exTransformer;
         mStorages = new IdentityHashMap<Class<?>, BDBStorage<Txn, ?>>();
         mSequences = new ConcurrentHashMap<String, SequenceValueGenerator>();
@@ -246,7 +244,7 @@ abstract class BDBRepository<Txn>
     }
 
     public String[] getUserStorableTypeNames() throws RepositoryException {
-        Repository metaRepo = getMetadataRepository();
+        Repository metaRepo = getRootRepository();
 
         Cursor<StoredDatabaseInfo> cursor =
             metaRepo.storageFor(StoredDatabaseInfo.class)
@@ -436,7 +434,7 @@ abstract class BDBRepository<Txn>
                     try {
                         producer = mSequences.get(name);
                         if (producer == null) {
-                            Repository metaRepo = getMetadataRepository();
+                            Repository metaRepo = getRootRepository();
                             try {
                                 producer = new SequenceValueGenerator(metaRepo, name);
                             } catch (RepositoryException e) {
@@ -465,18 +463,9 @@ abstract class BDBRepository<Txn>
         return mStorableCodecFactory;
     }
 
-    Repository getMetadataRepository() {
-        Repository metadataRepository = mMetadataRepository;
-        return metadataRepository == null ? mRootRef.get() : metadataRepository;
-    }
-
-    boolean hasCustomMetadataRepository() {
-        return mMetadataRepository != null;
-    }
-
     LayoutFactory getLayoutFactory() throws RepositoryException {
         if (mLayoutFactory == null) {
-            mLayoutFactory = new LayoutFactory(getMetadataRepository());
+            mLayoutFactory = new LayoutFactory(getRootRepository());
         }
         return mLayoutFactory;
     }

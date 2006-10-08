@@ -426,7 +426,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
                     primaryInfo.setIndexNameDescriptor(pkIndex.getNameDescriptor());
                     primaryInfo.setIndexTypeDescriptor(pkIndex.getTypeDescriptor());
 
-                    if (canWriteMetadata(readOnly)) {
+                    if (!readOnly) {
                         primaryInfo.update();
                     }
                 }
@@ -715,7 +715,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
             }
             info.setCreationTimestamp(System.currentTimeMillis());
             info.setVersionNumber(0);
-            if (canWriteMetadata(readOnly)) {
+            if (!readOnly) {
                 info.insert();
             }
         }
@@ -727,7 +727,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
             // Can't unregister when register wasn't allowed.
             return;
         }
-        if (canWriteMetadata(readOnly)) {
+        if (!readOnly) {
             StoredDatabaseInfo info;
             try {
                 info = prepareStoredDatabaseInfo();
@@ -743,11 +743,7 @@ abstract class BDBStorage<Txn, S extends Storable> implements Storage<S>, Storag
      * @throws SupportException if StoredDatabaseInfo is not supported by codec factory
      */
     private StoredDatabaseInfo prepareStoredDatabaseInfo() throws RepositoryException {
-        return mRepository.getMetadataRepository().storageFor(StoredDatabaseInfo.class).prepare();
-    }
-
-    private boolean canWriteMetadata(boolean readOnly) {
-        return !readOnly || mRepository.hasCustomMetadataRepository();
+        return mRepository.getRootRepository().storageFor(StoredDatabaseInfo.class).prepare();
     }
 
     // Note: BDBStorage could just implement the RawSupport interface, but

@@ -89,7 +89,6 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
     private String mSingleFileName;
     private boolean mIndexSupport = true;
     private boolean mReadOnly;
-    private Repository mMetadataRepository;
     private Long mCacheSize;
     private double mLockTimeout = 0.5;
     private double mTxnTimeout = 300.0;
@@ -352,27 +351,6 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
      */
     public boolean getReadOnly() {
         return mReadOnly;
-    }
-
-    /**
-     * By default, metadata is stored in the main repository. Pass in another
-     * repository to override. Passing in null reverts back to the default. The
-     * read-only configuration on the main repository is ignored when an
-     * alternate metadata repository is supplied.
-     *
-     * @deprecated
-     */
-    public void setMetadataRepository(Repository repository) {
-        mMetadataRepository = repository;
-    }
-
-    /**
-     * Returns repository used to store metadata, or null if main repository.
-     *
-     * @deprecated
-     */
-    public Repository getMetadataRepository() {
-        return mMetadataRepository;
     }
 
     /**
@@ -707,11 +685,6 @@ public class BDBRepositoryBuilder extends AbstractRepositoryBuilder {
                 messages.add("environment home is not a directory: " + envHome);
             }
         }
-    }
-
-    // Open up protected access
-    Iterable<TriggerFactory> triggerFactories() {
-        return super.getTriggerFactories();
     }
 
     /**
