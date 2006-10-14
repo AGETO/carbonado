@@ -65,17 +65,30 @@ public class TestUtilities {
         return buildTempRepository("test");
     }
 
+    public static Repository buildTempRepository(boolean isMaster) {
+        return buildTempRepository("test", isMaster);
+    }
+
     public static Repository buildTempRepository(String name) {
         return buildTempRepository(name, DEFAULT_CAPACITY);
     }
 
+    public static Repository buildTempRepository(String name, boolean isMaster) {
+        return buildTempRepository(name, DEFAULT_CAPACITY, isMaster);
+    }
+
     public static Repository buildTempRepository(String name, int capacity) {
+        return buildTempRepository(name, capacity, true);
+    }
+
+    public static Repository buildTempRepository(String name, int capacity, boolean isMaster) {
         BDBRepositoryBuilder builder = new BDBRepositoryBuilder();
         builder.setProduct("JE");
         builder.setName(name);
         builder.setTransactionNoSync(true);
         builder.setCacheSize(capacity);
         builder.setLogInMemory(true);
+        builder.setMaster(isMaster);
 
         if (sTempRepoDir == null) {
             sTempRepoDir = makeTestDirectoryString(name);

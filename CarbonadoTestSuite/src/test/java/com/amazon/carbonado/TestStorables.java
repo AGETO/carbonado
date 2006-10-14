@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -52,12 +53,12 @@ import com.amazon.carbonado.stored.*;
 
 /**
  * Runs an extensive set of acceptance tests for a repository. Must be
- * subclassed to specify a repository to use.
+ * subclassed to change the repository to use.
  *
  * @author Don Schneider
  * @author Brian S O'Neill
  */
-public abstract class TestStorables extends TestCase {
+public class TestStorables extends TestCase {
 
     public static final long sSetId = 0x1L << 0;           // 0x0001
     public static final long sGetStringProp = 0x1L << 1;   // 0x0002
@@ -111,6 +112,14 @@ public abstract class TestStorables extends TestCase {
     private Repository mRepository;
     private static int s_Ids = 0;
 
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+
+    public static TestSuite suite() {
+        return new TestSuite(TestStorables.class);
+    }
+
     public TestStorables(String s) {
         super(s);
     }
@@ -139,10 +148,11 @@ public abstract class TestStorables extends TestCase {
     }
 
     /**
-     * Subclasses must implement this method to specify a repository.
+     * Subclasses may override this method to change the repository.
      */
-    protected abstract Repository newRepository(boolean isMaster)
-        throws RepositoryException;
+    protected Repository buildRepository(boolean isMaster) throws RepositoryException {
+        return TestUtilities.buildTempRepository(isMaster);
+    }
 
     /**
      * provide subsequent access to the repository so the tests can do fancy things if
@@ -151,7 +161,7 @@ public abstract class TestStorables extends TestCase {
      */
     protected Repository getRepository() throws RepositoryException {
         if (mRepository == null) {
-            mRepository = newRepository(true);
+            mRepository = buildRepository(true);
         }
         return mRepository;
     }
@@ -970,7 +980,7 @@ public abstract class TestStorables extends TestCase {
 
     public void test_versioningDisabled() throws Exception {
         // Make sure repository works properly when configured as non-master.
-        Repository repo = newRepository(false);
+        Repository repo = buildRepository(false);
         Storage<StorableVersioned> storage = repo.storageFor(StorableVersioned.class);
 
         StorableVersioned s = storage.prepare();
