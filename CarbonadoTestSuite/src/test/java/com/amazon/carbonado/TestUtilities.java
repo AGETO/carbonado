@@ -82,19 +82,7 @@ public class TestUtilities {
     }
 
     public static Repository buildTempRepository(String name, int capacity, boolean isMaster) {
-        BDBRepositoryBuilder builder = new BDBRepositoryBuilder();
-        builder.setProduct("JE");
-        builder.setName(name);
-        builder.setTransactionNoSync(true);
-        builder.setCacheSize(capacity);
-        builder.setLogInMemory(true);
-        builder.setMaster(isMaster);
-
-        if (sTempRepoDir == null) {
-            sTempRepoDir = makeTestDirectoryString(name);
-        }
-
-        builder.setEnvironmentHome(sTempRepoDir);
+        RepositoryBuilder builder = newTempRepositoryBuilder(name, capacity, isMaster);
 
         try {
             return builder.build();
@@ -103,7 +91,41 @@ public class TestUtilities {
         }
     }
 
-    private static String sTempRepoDir;
+    public static RepositoryBuilder newTempRepositoryBuilder() {
+        return newTempRepositoryBuilder("test");
+    }
+
+    public static RepositoryBuilder newTempRepositoryBuilder(boolean isMaster) {
+        return newTempRepositoryBuilder("test", isMaster);
+    }
+
+    public static RepositoryBuilder newTempRepositoryBuilder(String name) {
+        return newTempRepositoryBuilder(name, DEFAULT_CAPACITY);
+    }
+
+    public static RepositoryBuilder newTempRepositoryBuilder(String name, boolean isMaster) {
+        return newTempRepositoryBuilder(name, DEFAULT_CAPACITY, isMaster);
+    }
+
+    public static RepositoryBuilder newTempRepositoryBuilder(String name, int capacity) {
+        return newTempRepositoryBuilder(name, capacity, true);
+    }
+
+    public static RepositoryBuilder newTempRepositoryBuilder(String name,
+                                                             int capacity,
+                                                             boolean isMaster)
+    {
+        BDBRepositoryBuilder builder = new BDBRepositoryBuilder();
+        builder.setProduct("JE");
+        builder.setName(name);
+        builder.setTransactionNoSync(true);
+        builder.setCacheSize(capacity);
+        builder.setLogInMemory(true);
+        builder.setMaster(isMaster);
+        builder.setEnvironmentHome(makeTestDirectoryString(name));
+
+        return builder;
+    }
 
     private static String sAlphabet = "abcdefghijklmnopqrstuvwxyz";
     private static Random sNumbers = new Random();
