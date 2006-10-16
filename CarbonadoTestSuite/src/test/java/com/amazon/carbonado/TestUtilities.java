@@ -123,6 +123,8 @@ public class TestUtilities {
         builder.setLogInMemory(true);
         builder.setMaster(isMaster);
         builder.setEnvironmentHome(makeTestDirectoryString(name));
+        // Makes it easier to get a thread dump during a deadlock.
+        builder.setLockTimeout(10);
 
         return builder;
     }
