@@ -63,7 +63,7 @@ public class TestTriggerManager extends TestCase {
     List<TestTrigger> afterTriggers;
     List<TestTrigger> failedTriggers;
 
-    public void testAddAndRemove() {
+    public void testAddAndRemove() throws Exception {
         TriggerManager<Dummy> set = new TriggerManager<Dummy>(null, null);
         Trigger<Dummy> trigger = new TestTrigger<Dummy>();
 
