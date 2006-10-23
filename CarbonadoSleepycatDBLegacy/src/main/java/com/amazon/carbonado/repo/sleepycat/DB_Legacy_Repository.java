@@ -154,18 +154,6 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return mEnv;
     }
 
-    protected String getVersionMajor() {
-        return "db" + DbEnv.get_version_major();
-    }
-
-    protected String getVersionMajorMinor() {
-        return getVersionMajor() + '.' + DbEnv.get_version_minor();
-    }
-
-    protected String getVersionMajorMinorPatch() {
-        return getVersionMajorMinor() + '.' + DbEnv.get_version_patch();
-    }
-
     IsolationLevel selectIsolationLevel(com.amazon.carbonado.Transaction parent,
                                         IsolationLevel level)
     {
