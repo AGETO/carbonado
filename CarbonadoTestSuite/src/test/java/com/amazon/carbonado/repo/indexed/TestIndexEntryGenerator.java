@@ -68,14 +68,17 @@ public class TestIndexEntryGenerator extends TestSyntheticStorableBuilders {
             master.insert();
 
             Storable index = mRepository.storageFor(s).prepare();
-            builder.setAllProperties(index, master);
+            builder.copyFromMaster(index, master);
             index.insert();
 
             Storable indexChecker = mRepository.storageFor(s).prepare();
-            builder.setAllProperties(indexChecker, master);
+            builder.copyFromMaster(indexChecker, master);
             assertTrue(indexChecker.tryLoad());
 
-            StorableTestBasic masterChecker = builder.loadMaster(indexChecker);
+            StorableTestBasic masterChecker =
+                mRepository.storageFor(StorableTestBasic.class).prepare();
+            builder.copyToMasterPrimaryKey(indexChecker, masterChecker);
+            masterChecker.load();
             assertEquals(master, masterChecker);
 
             assertTrue(builder.isConsistent(index, master));

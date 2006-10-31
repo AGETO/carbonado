@@ -108,12 +108,10 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 // FIXME: add version prop to STB
 //                                new MethodDef("getVersionNumber",
 //                                              new String[] { VERSION }),
-                                new MethodDef("getMaster_0", new String[] {
-                                        NULLABLE, JOIN }),
                                 new MethodDef("getIsConsistent_0", null),
 //                                new MethodDef("setVersionNumber", null),
-                                new MethodDef("setAllProperties_0", null),
-                                new MethodDef("setMaster_0", null),
+                                new MethodDef("copyFromMaster_0", null),
+                                new MethodDef("copyToMasterPk_0", null),
                                 new MethodDef("setId", null),
 
                                 new MethodDef("setStringProp", null),
@@ -142,12 +140,10 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 // FIXME: add version prop to STB
 //                                new MethodDef("getVersionNumber",
 //                                              new String[] { VERSION }),
-                                new MethodDef("getMaster_0", new String[] {
-                                        NULLABLE, JOIN }),
                                 new MethodDef("getIsConsistent_0", null),
 //                                new MethodDef("setVersionNumber", null),
-                                new MethodDef("setAllProperties_0", null),
-                                new MethodDef("setMaster_0", null),
+                                new MethodDef("copyFromMaster_0", null),
+                                new MethodDef("copyToMasterPk_0", null),
                                 new MethodDef("setId", null),
 
                                 new MethodDef("setStringProp", null),
@@ -181,11 +177,9 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 new MethodDef("getId", null),
                                 new MethodDef("getIntProp", null),
                                 new MethodDef("getDoubleProp", null),
-                                new MethodDef("getMaster_0", new String[] {
-                                        NULLABLE, JOIN }),
                                 new MethodDef("getIsConsistent_0", null),
-                                new MethodDef("setAllProperties_0", null),
-                                new MethodDef("setMaster_0", null),
+                                new MethodDef("copyFromMaster_0", null),
+                                new MethodDef("copyToMasterPk_0", null),
                                 new MethodDef("setId", null),
 
                                 new MethodDef("setStringProp", null),
@@ -336,14 +330,17 @@ public class TestSyntheticStorableBuilders extends TestCase {
             master.insert();
 
             Storable index = mRepository.storageFor(s).prepare();
-            builder.setAllProperties(index, master);
+            builder.copyFromMaster(index, master);
             index.insert();
 
             Storable indexChecker = mRepository.storageFor(s).prepare();
-            builder.setAllProperties(indexChecker, master);
+            builder.copyFromMaster(indexChecker, master);
             assertTrue(indexChecker.tryLoad());
 
-            StorableTestBasic masterChecker = builder.loadMaster(indexChecker);
+            StorableTestBasic masterChecker =
+                mRepository.storageFor(StorableTestBasic.class).prepare();
+            builder.copyToMasterPrimaryKey(indexChecker, masterChecker);
+            masterChecker.load();
             assertEquals(master, masterChecker);
 
             assertTrue(builder.isConsistent(index, master));
