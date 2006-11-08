@@ -773,9 +773,17 @@ public class TestLayout extends TestCase {
         }
     }
 
-    private Class<? extends StorableTestMinimal> defineStorable(String name,
-                                                                int extraPropCount,
-                                                                TypeDesc propType)
+    /**
+     * Defines a new Storable with a variable number of extra properties.
+     *
+     * @param name name of class to generate
+     * @param extraPropCount number of properties named "propN" to add, where N
+     * is the zero-based property number
+     * @param propType type of each extra property
+     */
+    public static Class<? extends StorableTestMinimal> defineStorable(String name,
+                                                                      int extraPropCount,
+                                                                      TypeDesc propType)
     {
         ClassInjector ci = ClassInjector.createExplicit(name, null);
         ClassFile cf = new ClassFile(ci.getClassName());
@@ -793,9 +801,16 @@ public class TestLayout extends TestCase {
         return ci.defineClass(cf);
     }
 
-    private Class<? extends StorableTestMinimal> defineStorable(String name,
-                                                                TypeDesc propType,
-                                                                TypeDesc propType2)
+    /**
+     * Defines a new Storable with two extra properties named "prop0" and "prop1".
+     *
+     * @param name name of class to generate
+     * @param propType type of property 0
+     * @param propType2 type of property 1
+     */
+    public static Class<? extends StorableTestMinimal> defineStorable(String name,
+                                                                      TypeDesc propType,
+                                                                      TypeDesc propType2)
     {
         ClassInjector ci = ClassInjector.createExplicit(name, null);
         ClassFile cf = new ClassFile(ci.getClassName());
@@ -816,7 +831,7 @@ public class TestLayout extends TestCase {
         return ci.defineClass(cf);
     }
 
-    private void definePrimaryKey(ClassFile cf) {
+    private static void definePrimaryKey(ClassFile cf) {
         // Add primary key on inherited "id" property.
         // @PrimaryKey(value={"id"})
         Annotation pk = cf.addRuntimeVisibleAnnotation(TypeDesc.forClass(PrimaryKey.class));
