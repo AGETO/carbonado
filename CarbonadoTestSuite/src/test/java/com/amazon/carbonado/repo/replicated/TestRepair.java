@@ -27,9 +27,11 @@ import junit.framework.TestSuite;
 import com.amazon.carbonado.CorruptEncodingException;
 import com.amazon.carbonado.Cursor;
 import com.amazon.carbonado.OptimisticLockException;
+import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryBuilder;
 import com.amazon.carbonado.Storage;
+import com.amazon.carbonado.Trigger;
 import com.amazon.carbonado.UniqueConstraintException;
 
 import com.amazon.carbonado.capability.ResyncCapability;
@@ -362,6 +364,14 @@ public class TestRepair extends TestCase {
     }
 
     public void testCorruptEntry() throws Exception {
+        testCorruptEntry(false);
+    }
+
+    public void testCorruptEntryPreventDelete() throws Exception {
+        testCorruptEntry(true);
+    }
+
+    private void testCorruptEntry(boolean preventDelete) throws Exception {
         // Close and open repository again, this time on disk. We need to close
         // and re-open the repository as part of the test.
         String[] locations = reOpenPersistent(null);
@@ -479,11 +489,34 @@ public class TestRepair extends TestCase {
         }
 
         // Resync to repair.
+
+        Trigger trigger = null;
+        if (preventDelete) {
+            // The resync will try to delete the corrupt replica entries, but
+            // this trigger will cause the delete to fail. Instead, the resync
+            // will skip over these entries instead of crashing outright.
+            trigger = new Trigger() {
+                @Override
+                public Object beforeDelete(Object s) throws PersistException {
+                    throw new PersistException("Cannot delete me!");
+                }
+            };
+            storage0.addTrigger(trigger);
+        }
+
         ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
         cap.resync(type0, 1.0, null);
 
-        // Verify records can be read out now.
+        if (preventDelete) {
+            // If this point is reached, the resync didn't crash, but it hasn't
+            // actually repaired the broken records. Remove the trigger and do
+            // the resync again.
+            storage0.removeTrigger(trigger);
+            cap.resync(type0, 1.0, null);
+        }
+
         {
+            // Verify records can be read out now.
             Cursor<? extends StorableTestMinimal> cursor = storage0.query().fetch();
             int actual = 0;
             while (cursor.hasNext()) {
