@@ -5,7 +5,7 @@
   <artifactId>carbonado-test-suite</artifactId>
   <packaging>jar</packaging>
   <name>CarbonadoTestSuite</name>
-  <version>1.1-BETA4</version>
+  <version>1.1-BETA5</version>
   <description>
     Test suite for Carbonado.
   </description>
@@ -65,7 +65,7 @@
     <dependency>
       <groupId>com.amazon.carbonado</groupId>
       <artifactId>carbonado</artifactId>
-      <version>1.1-BETA4</version>
+      <version>1.1-BETA5</version>
       <scope>test</scope>
     </dependency>
 
