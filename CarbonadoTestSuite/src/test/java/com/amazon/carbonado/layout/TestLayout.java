@@ -36,6 +36,7 @@ import org.cojen.util.BeanPropertyAccessor;
 import org.cojen.util.ClassInjector;
 
 import com.amazon.carbonado.adapter.YesNoAdapter;
+import com.amazon.carbonado.CorruptEncodingException;
 import com.amazon.carbonado.PrimaryKey;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.Storable;
@@ -45,6 +46,8 @@ import com.amazon.carbonado.info.StorableInfo;
 import com.amazon.carbonado.info.StorableIntrospector;
 import com.amazon.carbonado.info.StorableProperty;
 import com.amazon.carbonado.info.StorablePropertyAdapter;
+
+import com.amazon.carbonado.repo.sleepycat.BDBRepositoryBuilder;
 
 import com.amazon.carbonado.stored.FileInfo;
 import com.amazon.carbonado.stored.StorableDateIndex;
@@ -744,6 +747,54 @@ public class TestLayout extends TestCase {
             stm.load();
             assertEquals(500, bean.getPropertyValue(stm, "prop0"));
             assertEquals("world", bean.getPropertyValue(stm, "prop1"));
+        }
+    }
+
+    public void testCorruption() throws Exception {
+        // Forces corruption by deleting layout
+        // record. CorruptEncodingException should include Storable.
+
+        // Create a persistent repository.
+        mRepository.close();
+        BDBRepositoryBuilder builder =
+            (BDBRepositoryBuilder) TestUtilities.newTempRepositoryBuilder();
+        System.out.println(builder.getEnvironmentHome());
+        builder.setLogInMemory(false);
+        mRepository = builder.build();
+
+        Class<? extends StorableTestMinimal> type =
+            defineStorable(TEST_STORABLE_NAME, 0, TypeDesc.INT);
+
+        StorableTestMinimal test = mRepository.storageFor(type).prepare();
+        test.setId(1);
+        test.insert();
+
+        Class<? extends StorableTestMinimal> type2 =
+            defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.INT);
+
+        StorableTestMinimal test2 = mRepository.storageFor(type2).prepare();
+        test2.setId(2);
+        type2.getMethod("setProp0", int.class).invoke(test2, 10);
+        test2.insert();
+
+        // Close and re-open.
+        mRepository.close();
+        mRepository = builder.build();
+
+        test = mRepository.storageFor(type).prepare();
+        test.setId(1);
+        test.load();
+
+        // Blow away layout data.
+        mRepository.storageFor(StoredLayout.class).query().deleteAll();
+
+        test2 = mRepository.storageFor(type2).prepare();
+        test2.setId(2);
+        try {
+            test2.load();
+            fail();
+        } catch (CorruptEncodingException e) {
+            assertEquals(test2, e.getStorableWithPrimaryKey());
         }
     }
 
