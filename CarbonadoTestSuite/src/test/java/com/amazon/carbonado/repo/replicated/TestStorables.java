@@ -23,7 +23,12 @@ import junit.framework.TestSuite;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryBuilder;
 import com.amazon.carbonado.RepositoryException;
+import com.amazon.carbonado.Storage;
 import com.amazon.carbonado.TestUtilities;
+
+import com.amazon.carbonado.repo.replicated.ReplicatedRepository;
+
+import com.amazon.carbonado.spi.StoredSequence;
 
 /**
  *
@@ -54,5 +59,31 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
         builder.setReplicaRepositoryBuilder(replica);
         builder.setMasterRepositoryBuilder(master);
         return builder.build();
+    }
+
+    public void testAuthoritative() throws Exception {
+        // Make sure authoritative storable is not replicated.
+
+        Storage<StoredSequence> storage = getRepository().storageFor(StoredSequence.class);
+
+        StoredSequence seq = storage.prepare();
+        seq.setName("foo");
+        seq.setInitialValue(0);
+        seq.setNextValue(1);
+        seq.insert();
+
+        Storage<StoredSequence> replica = ((ReplicatedRepository) getRepository())
+            .getReplicaRepository().storageFor(StoredSequence.class);
+
+        seq = replica.prepare();
+        seq.setName("foo");
+        assertFalse(seq.tryLoad());
+
+        Storage<StoredSequence> master = ((ReplicatedRepository) getRepository())
+            .getMasterRepository().storageFor(StoredSequence.class);
+
+        seq = master.prepare();
+        seq.setName("foo");
+        assertTrue(seq.tryLoad());
     }
 }
