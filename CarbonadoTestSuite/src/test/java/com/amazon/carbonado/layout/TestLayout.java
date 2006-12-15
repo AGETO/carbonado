@@ -28,6 +28,7 @@ import org.joda.time.DateTime;
 
 import org.cojen.classfile.ClassFile;
 import org.cojen.classfile.CodeBuilder;
+import org.cojen.classfile.MethodInfo;
 import org.cojen.classfile.Modifiers;
 import org.cojen.classfile.TypeDesc;
 import org.cojen.classfile.attribute.Annotation;
@@ -37,6 +38,7 @@ import org.cojen.util.ClassInjector;
 
 import com.amazon.carbonado.adapter.YesNoAdapter;
 import com.amazon.carbonado.CorruptEncodingException;
+import com.amazon.carbonado.Nullable;
 import com.amazon.carbonado.PrimaryKey;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.Storable;
@@ -503,14 +505,21 @@ public class TestLayout extends TestCase {
         // Define various generations.
         Class<? extends StorableTestMinimal> typeWithInt =
             defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.INT);
+
         Class<? extends StorableTestMinimal> typeWithStr =
             defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.STRING);
+
         Class<? extends StorableTestMinimal> typeWithLong =
             defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.LONG);
+
         Class<? extends StorableTestMinimal> typeWithDate =
             defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.forClass(DateTime.class));
+
         Class<? extends StorableTestMinimal> typeWithIntAndStr =
             defineStorable(TEST_STORABLE_NAME, TypeDesc.INT, TypeDesc.STRING);
+
+        Class<? extends StorableTestMinimal> typeWithNullableInteger =
+            defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.forClass(Integer.class), true);
 
         DateTime date = new DateTime();
 
@@ -566,6 +575,28 @@ public class TestLayout extends TestCase {
             stm.insert();
         }
 
+        {
+            // Insert Nullable Integer prop0, value is non-null
+            Storage<? extends StorableTestMinimal> storage =
+                mRepository.storageFor(typeWithNullableInteger);
+            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
+            StorableTestMinimal stm = storage.prepare();
+            stm.setId(6);
+            bean.setPropertyValue(stm, "prop0", new Integer(9876));
+            stm.insert();
+        }
+
+        {
+            // Insert Nullable Integer prop0, value is null
+            Storage<? extends StorableTestMinimal> storage =
+                mRepository.storageFor(typeWithNullableInteger);
+            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
+            StorableTestMinimal stm = storage.prepare();
+            stm.setId(7);
+            bean.setPropertyValue(stm, "prop0", null);
+            stm.insert();
+        }
+
         // Load using int property generation.
         {
             // Load against int prop0.
@@ -600,6 +631,18 @@ public class TestLayout extends TestCase {
             stm.setId(5);
             stm.load();
             assertEquals(500, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
+            stm.load();
+            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
         }
 
         // Load using String property generation.
@@ -633,6 +676,18 @@ public class TestLayout extends TestCase {
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
             stm.load();
             assertEquals(null, bean.getPropertyValue(stm, "prop0"));
         }
@@ -670,6 +725,18 @@ public class TestLayout extends TestCase {
             stm.setId(5);
             stm.load();
             assertEquals(500L, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(9876L, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
+            stm.load();
+            assertEquals(0L, bean.getPropertyValue(stm, "prop0"));
         }
 
         // Load using date property generation.
@@ -703,6 +770,18 @@ public class TestLayout extends TestCase {
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
             stm.load();
             assertEquals(null, bean.getPropertyValue(stm, "prop0"));
         }
@@ -747,6 +826,69 @@ public class TestLayout extends TestCase {
             stm.load();
             assertEquals(500, bean.getPropertyValue(stm, "prop0"));
             assertEquals("world", bean.getPropertyValue(stm, "prop1"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
+            stm.load();
+            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+        }
+
+        // Load using Nullable Integer property generation.
+        {
+            // Load against int prop0.
+            Storage<? extends StorableTestMinimal> storage =
+                mRepository.storageFor(typeWithNullableInteger);
+            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
+            StorableTestMinimal stm = storage.prepare();
+            stm.setId(1);
+            stm.load();
+            assertEquals(100, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against String prop0.
+            stm = storage.prepare();
+            stm.setId(2);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against long prop0.
+            stm = storage.prepare();
+            stm.setId(3);
+            stm.load();
+            // Cast of 0x100000001L to int yields 1.
+            assertEquals(1, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against date prop0.
+            stm = storage.prepare();
+            stm.setId(4);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against int prop0, String prop1.
+            stm = storage.prepare();
+            stm.setId(5);
+            stm.load();
+            assertEquals(500, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value non-null.
+            stm = storage.prepare();
+            stm.setId(6);
+            stm.load();
+            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
+
+            // Load against Integer prop0, value null.
+            stm = storage.prepare();
+            stm.setId(7);
+            stm.load();
+            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
         }
     }
 
@@ -758,7 +900,7 @@ public class TestLayout extends TestCase {
         mRepository.close();
         BDBRepositoryBuilder builder =
             (BDBRepositoryBuilder) TestUtilities.newTempRepositoryBuilder();
-        System.out.println(builder.getEnvironmentHome());
+        //System.out.println(builder.getEnvironmentHome());
         builder.setLogInMemory(false);
         mRepository = builder.build();
 
@@ -836,6 +978,23 @@ public class TestLayout extends TestCase {
                                                                       int extraPropCount,
                                                                       TypeDesc propType)
     {
+        return defineStorable(name, extraPropCount, propType, false);
+    }
+
+    /**
+     * Defines a new Storable with a variable number of extra properties.
+     *
+     * @param name name of class to generate
+     * @param extraPropCount number of properties named "propN" to add, where N
+     * is the zero-based property number
+     * @param propType type of each extra property
+     * @param nullable properties should be annotated as Nullable
+     */
+    public static Class<? extends StorableTestMinimal> defineStorable(String name,
+                                                                      int extraPropCount,
+                                                                      TypeDesc propType,
+                                                                      boolean nullable)
+    {
         ClassInjector ci = ClassInjector.createExplicit(name, null);
         ClassFile cf = new ClassFile(ci.getClassName());
         cf.setTarget("1.5");
@@ -845,7 +1004,13 @@ public class TestLayout extends TestCase {
         definePrimaryKey(cf);
 
         for (int i=0; i<extraPropCount; i++) {
-            cf.addMethod(Modifiers.PUBLIC_ABSTRACT, "getProp" + i, propType, null);
+            MethodInfo getMethod = cf.addMethod
+                (Modifiers.PUBLIC_ABSTRACT, "getProp" + i, propType, null);
+
+            if (nullable) {
+                getMethod.addRuntimeVisibleAnnotation(TypeDesc.forClass(Nullable.class));
+            }
+
             cf.addMethod(Modifiers.PUBLIC_ABSTRACT, "setProp" + i, null, new TypeDesc[]{propType});
         }
 
