@@ -104,6 +104,9 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
                 if (builder.getTransactionNoSync()) {
                     flags |= Db.DB_TXN_NOSYNC;
                 }
+                if (builder.getTransactionWriteNoSync()) {
+                    flags |= Db.DB_TXN_WRITE_NOSYNC;
+                }
 
                 if (builder.isPrivate()) {
                     flags |= Db.DB_PRIVATE;
