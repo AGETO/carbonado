@@ -117,4 +117,27 @@ public class TestFilterSuppliedValues extends TestCase {
         assertEquals("hello", values[0]);
         assertEquals(new Integer(5), values[1]);
     }
+
+    public void testSuppliedValuesFor_multipleReferences() {
+        // Test with property filter duplication.
+        Filter<Order> oneProp = Filter.filterFor(Order.class, "orderTotal != ?");
+        oneProp = oneProp.bind();
+
+        // Note that reduce is not called on the filter, as it would reduce the
+        // filter back to one term.
+        Filter<Order> f = oneProp.and(oneProp);
+
+        // Note that values are only for oneProp.
+        FilterValues<Order> fv = oneProp.initialFilterValues();
+
+        Object[] values = fv.getSuppliedValuesFor(f);
+        assertEquals(0, values.length);
+
+        // Supply one actual value...
+        values = fv.with(10).getSuppliedValuesFor(f);
+        // ...which is duplicated as required by f.
+        assertEquals(2, values.length);
+        assertEquals(new Integer(10), values[0]);
+        assertEquals(new Integer(10), values[1]);
+    }
 }
