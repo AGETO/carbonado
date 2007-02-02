@@ -90,6 +90,7 @@ public class TestLayout extends TestCase {
     protected void tearDown() throws Exception {
         mRepository.close();
         mRepository = null;
+        mFactory = null;
     }
 
     public void testBasic() throws Exception {
@@ -376,6 +377,12 @@ public class TestLayout extends TestCase {
             stm.setId(2);
             stm.load();
             assertEquals(200, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+
+            // Load old generation and verify that new property value is cleared.
+            stm.markAllPropertiesDirty();
+            stm.setId(1);
+            stm.load();
+            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
         }
 
         {
