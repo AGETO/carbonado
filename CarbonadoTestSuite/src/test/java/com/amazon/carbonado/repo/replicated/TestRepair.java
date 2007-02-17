@@ -490,28 +490,34 @@ public class TestRepair extends TestCase {
 
         // Resync to repair.
 
-        Trigger trigger = null;
+        class Prevent extends Trigger {
+            boolean didRun;
+
+            @Override
+            public Object beforeDelete(Object s) throws PersistException {
+                didRun = true;
+                throw new PersistException("Cannot delete me!");
+            }
+        }
+
+        Prevent prevent = null;
         if (preventDelete) {
-            // The resync will try to delete the corrupt replica entries, but
-            // this trigger will cause the delete to fail. Instead, the resync
-            // will skip over these entries instead of crashing outright.
-            trigger = new Trigger() {
-                @Override
-                public Object beforeDelete(Object s) throws PersistException {
-                    throw new PersistException("Cannot delete me!");
-                }
-            };
-            storage0.addTrigger(trigger);
+            // This is a partially vestigial test. It used to be the case that
+            // triggers would run during a resync or replication repair. This
+            // is no longer the case. Instead, use this as an opportunity to
+            // ensure the trigger does not run.
+            prevent = new Prevent();
+            storage0.addTrigger(prevent);
         }
 
         ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
         cap.resync(type0, 1.0, null);
 
         if (preventDelete) {
-            // If this point is reached, the resync didn't crash, but it hasn't
-            // actually repaired the broken records. Remove the trigger and do
-            // the resync again.
-            storage0.removeTrigger(trigger);
+            // Again, this is a partially vestigial test. The trigger should
+            // not have run at all during the resync.
+            assertFalse(prevent.didRun);
+            storage0.removeTrigger(prevent);
             cap.resync(type0, 1.0, null);
         }
 
