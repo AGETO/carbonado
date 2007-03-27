@@ -1,0 +1,12 @@
+CarbonadoTestSuite version 1.1
+------------------------------
+
+Carbonado is an extensible, high performance persistence abstraction layer for
+Java applications with a relational view to the underlying persistence
+technology.
+
+http://carbonado.sourceforge.net/
+
+The CarbonadoTestSuite project encapsulates all the tests for Carbonado. The
+Carbonado project itself does not contain any tests.
+

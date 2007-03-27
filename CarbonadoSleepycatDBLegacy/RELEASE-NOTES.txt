@@ -1,0 +1,14 @@
+CarbonadoSleepycatDBLegacy version 1.1
+--------------------------------------
+
+Carbonado is an extensible, high performance persistence abstraction layer for
+Java applications with a relational view to the underlying persistence
+technology.
+
+http://carbonado.sourceforge.net/
+
+The CarbonadoSleepycatDBLegacy project supports persistence for older versions
+of Oracle/Sleepycat Berkeley Database. Specifically, it supports versions 4.1
+and 4.2 which had a different Java API. When using newer BDB versions (4.3+),
+use CarbonadoSleepycatDB instead.
+
