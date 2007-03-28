@@ -31,8 +31,8 @@ import com.amazon.carbonado.Transaction;
 
 import com.amazon.carbonado.capability.Capability;
 
-import com.amazon.carbonado.spi.SequenceValueGenerator;
-import com.amazon.carbonado.spi.SequenceValueProducer;
+import com.amazon.carbonado.sequence.SequenceValueGenerator;
+import com.amazon.carbonado.sequence.SequenceValueProducer;
 
 /**
  *

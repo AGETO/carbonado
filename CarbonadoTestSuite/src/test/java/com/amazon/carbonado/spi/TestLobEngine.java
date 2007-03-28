@@ -58,7 +58,7 @@ public class TestLobEngine extends TestCase {
     @Override
     protected void setUp() throws Exception {
         mRepo = TestUtilities.buildTempRepository();
-        mEngine = new LobEngine(mRepo);
+        mEngine = new LobEngine(mRepo, mRepo);
     }
 
     @Override

@@ -229,7 +229,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
     }
 
-    protected <S extends Storable> BDBStorage<DbTxn, S> createStorage(Class<S> type)
+    protected <S extends Storable> BDBStorage<DbTxn, S> createBDBStorage(Class<S> type)
         throws Exception
     {
         return new DB_Legacy_Storage<S>(this, type);

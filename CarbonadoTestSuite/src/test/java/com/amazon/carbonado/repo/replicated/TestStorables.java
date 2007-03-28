@@ -28,7 +28,7 @@ import com.amazon.carbonado.TestUtilities;
 
 import com.amazon.carbonado.repo.replicated.ReplicatedRepository;
 
-import com.amazon.carbonado.spi.StoredSequence;
+import com.amazon.carbonado.sequence.StoredSequence;
 
 /**
  *

@@ -24,8 +24,12 @@ package com.amazon.carbonado.repo.jdbc;
  * @author Brian S O'Neill
  */
 class MysqlSupportStrategy extends JDBCSupportStrategy {
+    private static final String TRUNCATE_STATEMENT = "TRUNCATE TABLE %s";
+
     protected MysqlSupportStrategy(JDBCRepository repo) {
         super(repo);
+
+        setTruncateTableStatement(TRUNCATE_STATEMENT);
     }
 
     JDBCExceptionTransformer createExceptionTransformer() {

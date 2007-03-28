@@ -28,6 +28,8 @@ import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.IsolationLevel;
 import com.amazon.carbonado.Storable;
 
+import com.amazon.carbonado.spi.TransactionManager;
+
 /**
  * Cursor for a primary database.
  *
@@ -53,7 +55,7 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
      * @param database primary database to use
      * @throws IllegalArgumentException if any bound is null but is not inclusive
      */
-    DB_Legacy_Cursor(BDBTransactionManager<DbTxn> txnMgr,
+    DB_Legacy_Cursor(TransactionManager<DbTxn> txnMgr,
                      byte[] startBound, boolean inclusiveStart,
                      byte[] endBound, boolean inclusiveEnd,
                      int maxPrefix,

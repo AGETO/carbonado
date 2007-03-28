@@ -37,8 +37,9 @@ import com.amazon.carbonado.SupportException;
 import com.amazon.carbonado.Transaction;
 import com.amazon.carbonado.Trigger;
 
+import com.amazon.carbonado.sequence.SequenceValueProducer;
+
 import com.amazon.carbonado.spi.MasterSupport;
-import com.amazon.carbonado.spi.SequenceValueProducer;
 
 import com.amazon.carbonado.util.QuickConstructorGenerator;
 
@@ -121,6 +122,15 @@ public class ToyStorage<S extends Storable>
         }
 
         return executor;
+    }
+
+    public void truncate() {
+        mDataLock.lock();
+        try {
+            mData.clear();
+        } finally {
+            mDataLock.unlock();
+        }
     }
 
     public boolean addTrigger(Trigger<? super S> trigger) {

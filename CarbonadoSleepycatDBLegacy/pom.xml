@@ -5,7 +5,7 @@
   <artifactId>carbonado-sleepycat-db-legacy</artifactId>
   <packaging>jar</packaging>
   <name>CarbonadoSleepycatDBLegacy</name>
-  <version>1.1</version>
+  <version>1.2-SNAPSHOT</version>
   <description>
     Carbonado repository for older versions (pre 4.3) of Sleepycat DB.
   </description>
@@ -65,7 +65,7 @@
     <dependency>
       <groupId>com.amazon.carbonado</groupId>
       <artifactId>carbonado</artifactId>
-      <version>1.1</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.sleepycat</groupId>
