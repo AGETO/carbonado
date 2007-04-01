@@ -34,11 +34,11 @@ import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.SupportException;
 import com.amazon.carbonado.Trigger;
 
-import com.amazon.carbonado.spi.MasterFeature;
-import com.amazon.carbonado.spi.MasterStorableGenerator;
-import com.amazon.carbonado.spi.MasterSupport;
-import com.amazon.carbonado.spi.StorableGenerator;
-import com.amazon.carbonado.spi.TriggerSupport;
+import com.amazon.carbonado.gen.MasterFeature;
+import com.amazon.carbonado.gen.MasterStorableGenerator;
+import com.amazon.carbonado.gen.MasterSupport;
+import com.amazon.carbonado.gen.StorableGenerator;
+import com.amazon.carbonado.gen.TriggerSupport;
 
 /**
  * 

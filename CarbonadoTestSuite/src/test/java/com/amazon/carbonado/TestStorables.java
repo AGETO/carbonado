@@ -47,7 +47,7 @@ import com.amazon.carbonado.UniqueConstraintException;
 import com.amazon.carbonado.cursor.SortedCursor;
 
 import com.amazon.carbonado.spi.RepairExecutor;
-import com.amazon.carbonado.spi.WrappedSupport;
+import com.amazon.carbonado.gen.WrappedSupport;
 
 import com.amazon.carbonado.stored.*;
 

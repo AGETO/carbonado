@@ -16,12 +16,10 @@
  * limitations under the License.
  */
 
-package com.amazon.carbonado.spi;
+package com.amazon.carbonado.info;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import com.amazon.carbonado.spi.ConversionComparator;
 
 /**
  * Test cases for {@link ConversionComparator}.

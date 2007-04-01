@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.amazon.carbonado.spi;
+package com.amazon.carbonado.gen;
 
 import java.util.Map;
 import java.lang.reflect.Constructor;
@@ -35,7 +35,6 @@ import org.cojen.classfile.MethodInfo;
 import org.cojen.classfile.CodeBuilder;
 
 import com.amazon.carbonado.Storable;
-import com.amazon.carbonado.spi.CodeBuilderUtil;
 
 /**
  * StorableInterceptorFactory creates instances of Storables that delegate

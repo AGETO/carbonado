@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 
 import junit.framework.TestSuite;
 import com.amazon.carbonado.TestUtilities;
-import com.amazon.carbonado.spi.StorableInterceptorFactory;
+import com.amazon.carbonado.gen.StorableInterceptorFactory;
 import com.amazon.carbonado.stored.StorableTestBasic;
 import com.amazon.carbonado.stored.StorableTestBasicIdMunger;
 import com.amazon.carbonado.TestStorables;

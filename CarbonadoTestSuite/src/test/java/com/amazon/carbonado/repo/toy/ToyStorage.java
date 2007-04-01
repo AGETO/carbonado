@@ -39,7 +39,7 @@ import com.amazon.carbonado.Trigger;
 
 import com.amazon.carbonado.sequence.SequenceValueProducer;
 
-import com.amazon.carbonado.spi.MasterSupport;
+import com.amazon.carbonado.gen.MasterSupport;
 
 import com.amazon.carbonado.util.QuickConstructorGenerator;
 
