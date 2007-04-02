@@ -79,8 +79,8 @@ public class TestFilteringScore extends TestCase {
         assertFalse(score.hasAnyMatches());
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
     }
 
     public void testSimpleIndexMisses() throws Exception {
@@ -105,8 +105,8 @@ public class TestFilteringScore extends TestCase {
         assertEquals(1, score.getRemainderFilters().size());
         assertEquals(filter, score.getRemainderFilters().get(0));
         assertEquals(filter, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
 
         // Try again with matching property, but with an operator that cannot be used by index.
         filter = Filter.filterFor(StorableTestBasic.class, "intProp != ?");
@@ -128,12 +128,8 @@ public class TestFilteringScore extends TestCase {
         assertEquals(1, score.getRemainderFilters().size());
         assertEquals(filter, score.getRemainderFilters().get(0));
         assertEquals(filter, score.getRemainderFilter());
-
-        // Can be weakly used, however.
-        assertEquals(1, score.getWeakMatchCount());
-        assertEquals(1, score.getWeakMatchFilters().size());
-        assertEquals(filter, score.getWeakMatchFilters().get(0));
-        assertEquals(filter, score.getWeakMatchFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
     }
 
     public void testSimpleIndexMatches() throws Exception {
@@ -158,9 +154,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
         assertEquals(null, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
-        assertEquals(null, score.getWeakMatchRemainderFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(null, score.getExtraMatchRemainderFilter());
 
         // Try again with open ranges.
         for (int i=0; i<4; i++) {
@@ -183,9 +179,9 @@ public class TestFilteringScore extends TestCase {
             assertEquals(0, score.getRemainderCount());
             assertEquals(0, score.getRemainderFilters().size());
             assertEquals(null, score.getRemainderFilter());
-            assertEquals(0, score.getWeakMatchCount());
-            assertEquals(0, score.getWeakMatchFilters().size());
-            assertEquals(null, score.getWeakMatchRemainderFilter());
+            assertEquals(0, score.getExtraMatchCount());
+            assertEquals(0, score.getExtraMatchFilters().size());
+            assertEquals(null, score.getExtraMatchRemainderFilter());
 
             if (i < 2) {
                 assertTrue(score.hasRangeStart());
@@ -214,9 +210,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
         assertEquals(null, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
-        assertEquals(null, score.getWeakMatchRemainderFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(null, score.getExtraMatchRemainderFilter());
 
         assertTrue(score.hasRangeStart());
         assertEquals(2, score.getRangeStartFilters().size());
@@ -239,9 +235,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
         assertEquals(null, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
-        assertEquals(null, score.getWeakMatchRemainderFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(null, score.getExtraMatchRemainderFilter());
 
         assertFalse(score.hasRangeStart());
         assertEquals(0, score.getRangeStartFilters().size());
@@ -264,9 +260,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
         assertEquals(null, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
-        assertEquals(null, score.getWeakMatchRemainderFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(null, score.getExtraMatchRemainderFilter());
 
         assertTrue(score.hasRangeStart());
         assertEquals(1, score.getRangeStartFilters().size());
@@ -354,9 +350,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(0, score.getRemainderCount());
         assertEquals(0, score.getRemainderFilters().size());
         assertEquals(null, score.getRemainderFilter());
-        assertEquals(0, score.getWeakMatchCount());
-        assertEquals(0, score.getWeakMatchFilters().size());
-        assertEquals(null, score.getWeakMatchRemainderFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(null, score.getExtraMatchRemainderFilter());
 
         // Filter by a property with a gap. (filter must include "id" to use index)
         filter = Filter.filterFor(StorableTestBasic.class, "intProp = ?");
@@ -368,11 +364,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(1, score.getRemainderCount());
         assertEquals(1, score.getRemainderFilters().size());
         assertEquals(filter, score.getRemainderFilter());
-
-        // Can be weakly used, however.
-        assertEquals(1, score.getWeakMatchCount());
-        assertEquals(1, score.getWeakMatchFilters().size());
-        assertEquals(filter, score.getWeakMatchFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(filter, score.getExtraMatchRemainderFilter());
 
         // Filter by a property with a gap and a range operator. (index still cannot be used)
         filter = Filter.filterFor(StorableTestBasic.class, "intProp = ? & stringProp < ?");
@@ -384,11 +378,9 @@ public class TestFilteringScore extends TestCase {
         assertEquals(2, score.getRemainderCount());
         assertEquals(2, score.getRemainderFilters().size());
         assertEquals(filter, score.getRemainderFilter());
-
-        // Can be weakly used, however.
-        assertEquals(2, score.getWeakMatchCount());
-        assertEquals(2, score.getWeakMatchFilters().size());
-        assertEquals(filter, score.getWeakMatchFilter());
+        assertEquals(0, score.getExtraMatchCount());
+        assertEquals(0, score.getExtraMatchFilters().size());
+        assertEquals(filter, score.getExtraMatchRemainderFilter());
 
         // Filter with range match before identity match. Identity cannot be used.
         filter = Filter.filterFor(StorableTestBasic.class, "intProp = ? & id < ?");
@@ -408,11 +400,10 @@ public class TestFilteringScore extends TestCase {
         assertEquals(Filter.filterFor(StorableTestBasic.class, "intProp = ?"),
                      score.getRemainderFilter());
 
-        // Can be weakly used, however.
-        assertEquals(1, score.getWeakMatchCount());
-        assertEquals(1, score.getWeakMatchFilters().size());
+        assertEquals(1, score.getExtraMatchCount());
+        assertEquals(1, score.getExtraMatchFilters().size());
         assertEquals(Filter.filterFor(StorableTestBasic.class, "intProp = ?"),
-                     score.getWeakMatchFilter());
+                     score.getExtraMatchFilter());
 
         // Filter with fully specified identity match, but a few remaining.
         filter = Filter.filterFor
@@ -440,14 +431,14 @@ public class TestFilteringScore extends TestCase {
         assertEquals(Filter.filterFor(StorableTestBasic.class, "stringProp > ?"),
                      score.getRemainderFilters().get(1));
 
-        // Weakly match other use of stringProp.
-        assertEquals(1, score.getWeakMatchCount());
-        assertEquals(1, score.getWeakMatchFilters().size());
+        // Other use of stringProp is an extra match.
+        assertEquals(1, score.getExtraMatchCount());
+        assertEquals(1, score.getExtraMatchFilters().size());
         assertEquals(Filter.filterFor(StorableTestBasic.class, "stringProp > ?"),
-                     score.getWeakMatchFilters().get(0));
+                     score.getExtraMatchFilters().get(0));
 
         assertEquals(Filter.filterFor(StorableTestBasic.class, "doubleProp = ?"),
-                     score.getWeakMatchRemainderFilter());
+                     score.getExtraMatchRemainderFilter());
 
         // Filter with identity and range matches.
         filter = Filter.filterFor
@@ -471,12 +462,12 @@ public class TestFilteringScore extends TestCase {
         assertEquals(Filter.filterFor(StorableTestBasic.class, "stringProp < ?"),
                      score.getRemainderFilters().get(2));
 
-        assertEquals(2, score.getWeakMatchCount());
-        assertEquals(2, score.getWeakMatchFilters().size());
+        assertEquals(2, score.getExtraMatchCount());
+        assertEquals(2, score.getExtraMatchFilters().size());
         assertEquals(Filter.filterFor(StorableTestBasic.class, "stringProp = ?"),
-                     score.getWeakMatchFilters().get(0));
+                     score.getExtraMatchFilters().get(0));
         assertEquals(Filter.filterFor(StorableTestBasic.class, "stringProp < ?"),
-                     score.getWeakMatchFilters().get(1));
+                     score.getExtraMatchFilters().get(1));
 
         assertTrue(score.hasRangeMatch());
         assertTrue(score.hasRangeStart());
