@@ -1014,6 +1014,189 @@ public class TestStorables extends TestCase {
         repo = null;
     }
 
+    public void test_derivedVersion() throws Exception {
+        Storage<WithDerivedVersion> storage = getRepository().storageFor(WithDerivedVersion.class);
+
+        WithDerivedVersion s = storage.prepare();
+        s.setID(1);
+        s.setName("john");
+        s.setValue(2);
+        s.insert();
+        assertEquals(2, s.getVersion());
+
+        try {
+            s.setName("bob");
+            s.setValue(2); // dirty the property version derives from
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s.setValue(3);
+        s.update();
+
+        try {
+            s.load();
+            s.setName("fred");
+            s.setValue(1);
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s = storage.prepare();
+        s.setID(1);
+        s.setName("fred");
+        s.setValue(100);
+        s.update();
+    }
+
+    public void test_derivedFloatVersion() throws Exception {
+        Storage<WithDerivedFloatVersion> storage =
+            getRepository().storageFor(WithDerivedFloatVersion.class);
+
+        WithDerivedFloatVersion s = storage.prepare();
+        s.setID(1);
+        s.setName("john");
+        s.setValue(2.1f);
+        s.insert();
+        assertEquals(2.1f, s.getVersion());
+
+        try {
+            s.setName("bob");
+            s.setValue(2.1f); // dirty the property version derives from
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s.setValue(2.12f);
+        s.update();
+
+        try {
+            s.load();
+            s.setName("fred");
+            s.setValue(1);
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s = storage.prepare();
+        s.setID(1);
+        s.setName("fred");
+        s.setValue(100);
+        s.update();
+
+        s.setValue(Float.NaN);
+        s.setName("sara");
+        s.update();
+
+        s.setValue(3.14f);
+        s.setName("conner");
+        s.update();
+    }
+
+    public void test_derivedDoubleObjVersion() throws Exception {
+        Storage<WithDerivedDoubleObjVersion> storage =
+            getRepository().storageFor(WithDerivedDoubleObjVersion.class);
+
+        WithDerivedDoubleObjVersion s = storage.prepare();
+        s.setID(1);
+        s.setName("john");
+        s.setValue(2.1);
+        s.insert();
+        assertEquals(2.1, s.getVersion());
+
+        try {
+            s.setName("bob");
+            s.setValue(2.1); // dirty the property version derives from
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s.setValue(2.12);
+        s.update();
+
+        try {
+            s.load();
+            s.setName("fred");
+            s.setValue(1.0);
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s = storage.prepare();
+        s.setID(1);
+        s.setName("fred");
+        s.setValue(100.0);
+        s.update();
+
+        s.setValue(Double.NaN);
+        s.setName("sara");
+        s.update();
+
+        s.setValue(3.14);
+        s.setName("conner");
+        s.update();
+
+        s.setValue(null);
+        s.setName("steve");
+        s.update();
+
+        s.setValue(1.5);
+        s.setName("cathy");
+        s.update();
+    }
+
+    public void test_derivedStringVersion() throws Exception {
+        Storage<WithDerivedStringVersion> storage =
+            getRepository().storageFor(WithDerivedStringVersion.class);
+
+        WithDerivedStringVersion s = storage.prepare();
+        s.setID(1);
+        s.setName("john");
+        s.setValue("a");
+        s.insert();
+        assertEquals("a", s.getVersion());
+
+        try {
+            s.setName("bob");
+            s.setValue("a"); // dirty the property version derives from
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s.setValue("b");
+        s.update();
+
+        try {
+            s.load();
+            s.setName("fred");
+            s.setValue("a");
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        s = storage.prepare();
+        s.setID(1);
+        s.setName("fred");
+        s.setValue("c");
+        s.update();
+
+        s.setValue(null);
+        s.setName("steve");
+        s.update();
+
+        s.setValue("a");
+        s.setName("cathy");
+        s.update();
+    }
+
     public void test_sequences() throws Exception {
         Storage<StorableSequenced> storage = getRepository().storageFor(StorableSequenced.class);
 
@@ -1196,6 +1379,150 @@ public class TestStorables extends TestCase {
         } finally {
             DateTimeZone.setDefault(original);
         }
+    }
+
+    public void test_derivedFunctionIndex() throws Exception {
+        Storage<WithFunctionIndex> storage = getRepository().storageFor(WithFunctionIndex.class);
+
+        WithFunctionIndex s = storage.prepare();
+        s.setID(1);
+        s.setSum(10);
+        s.setCount(20);
+        s.insert();
+
+        s = storage.prepare();
+        s.setID(2);
+        s.setSum(20);
+        s.setCount(40);
+        s.insert();
+
+        s = storage.prepare();
+        s.setID(3);
+        s.setSum(20);
+        s.setCount(0);
+        s.insert();
+
+        s = storage.prepare();
+        s.setID(4);
+        s.setSum(0);
+        s.setCount(0);
+        s.insert();
+
+        s = storage.prepare();
+        s.setID(5);
+        s.setSum(10);
+        s.setCount(10);
+        s.insert();
+
+        Query<WithFunctionIndex> query = storage.query("average = ?");
+        Query<WithFunctionIndex> q2 = storage.query("averageObject = ?");
+
+        assertEquals(2, query.with(0.5).count());
+        assertEquals(3, query.with(20.0 / 0).loadOne().getID());
+        assertEquals(4, query.with(0.0 / 0).loadOne().getID());
+        assertEquals(5, query.with(1.0).loadOne().getID());
+
+        assertEquals(2, q2.with(0.5).count());
+        assertEquals(3, q2.with(20.0 / 0).loadOne().getID());
+        assertEquals(4, q2.with(0.0 / 0).loadOne().getID());
+        assertEquals(5, q2.with(1.0).loadOne().getID());
+
+        s = storage.prepare();
+        s.setID(5);
+        s.setSum(2);
+        s.update();
+
+        assertEquals(0, query.with(1.0).count());
+        assertEquals(5, query.with(0.2).loadOne().getID());
+
+        s.delete();
+
+        assertEquals(0, query.with(1.0).count());
+        assertEquals(0, query.with(0.2).count());
+    }
+
+    public void test_derivedJoinIndex() throws Exception {
+        Storage<WithDerivedChainA> aStorage = getRepository().storageFor(WithDerivedChainA.class);
+        Storage<WithDerivedChainB> bStorage = getRepository().storageFor(WithDerivedChainB.class);
+        Storage<WithDerivedChainC> cStorage = getRepository().storageFor(WithDerivedChainC.class);
+        Storage<WithDerivedChainD> dStorage = getRepository().storageFor(WithDerivedChainD.class);
+
+        int aid = 101;
+        int bid = 201;
+        int cid = 301;
+        int did = 401;
+
+        WithDerivedChainD d = dStorage.prepare();
+        // Insert later
+        //d.setDid(did);
+        //d.setName("dee");
+        //d.insert();
+        d = dStorage.prepare();
+        d.setDid(did + 1);
+        d.setName("dee2");
+        d.insert();
+
+        WithDerivedChainC c = cStorage.prepare();
+        c.setCid(cid);
+        c.setName("cee");
+        c.setDid(did);
+        c.insert();
+        c = cStorage.prepare();
+        c.setCid(cid + 1);
+        c.setName("cee2");
+        c.setDid(did + 1);
+        c.insert();
+
+        WithDerivedChainB b = bStorage.prepare();
+        b.setBid(bid);
+        b.setName("bee");
+        b.setCid(cid);
+        b.insert();
+        b = bStorage.prepare();
+        b.setBid(bid + 1);
+        b.setName("bee2");
+        b.setCid(cid + 1);
+        b.insert();
+
+        WithDerivedChainA a = aStorage.prepare();
+        a.setAid(aid);
+        a.setName("aye");
+        a.setBid(bid);
+        try {
+            // Insert fails because d doesn't exist.
+            a.insert();
+            fail();
+        } catch (PersistException e) {
+        }
+
+        d = dStorage.prepare();
+        d.setDid(did);
+        d.setName("dee");
+        d.insert();
+
+        a.insert();
+
+        a = aStorage.prepare();
+        a.setAid(aid + 1);
+        a.setName("aye2");
+        a.setBid(bid + 1);
+        a.insert();
+
+        Query<WithDerivedChainA> aQuery = aStorage.query("DName = ?");
+
+        assertEquals(101, aQuery.with("dee").loadOne().getAid());
+        assertEquals(102, aQuery.with("dee2").loadOne().getAid());
+
+        a.delete();
+
+        assertEquals(101, aQuery.with("dee").loadOne().getAid());
+        assertNull(aQuery.with("dee2").tryLoadOne());
+
+        d.setName("dee!!!");
+        d.update();
+
+        assertNull(aQuery.with("dee").tryLoadOne());
+        assertEquals(101, aQuery.with("dee!!!").loadOne().getAid());
     }
 
     public void test_joinCache() throws Exception {

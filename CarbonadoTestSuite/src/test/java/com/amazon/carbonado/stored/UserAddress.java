@@ -62,5 +62,5 @@ public abstract class UserAddress implements Storable<UserAddress> {
     @Nullable
     @Join(internal="neighborAddressID", external="addressID")
     public abstract UserAddress getNeighbor() throws FetchException;
-    public abstract void setNeighbor(UserAddress address) throws FetchException;
+    public abstract void setNeighbor(UserAddress address);
 }
