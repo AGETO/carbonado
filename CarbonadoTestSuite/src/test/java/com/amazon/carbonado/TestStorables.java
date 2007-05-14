@@ -18,8 +18,13 @@
 
 package com.amazon.carbonado;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -45,6 +50,11 @@ import com.amazon.carbonado.Trigger;
 import com.amazon.carbonado.UniqueConstraintException;
 
 import com.amazon.carbonado.cursor.SortedCursor;
+
+import com.amazon.carbonado.lob.Blob;
+import com.amazon.carbonado.lob.ByteArrayBlob;
+import com.amazon.carbonado.lob.Clob;
+import com.amazon.carbonado.lob.StringClob;
 
 import com.amazon.carbonado.spi.RepairExecutor;
 import com.amazon.carbonado.gen.WrappedSupport;
@@ -1246,6 +1256,33 @@ public class TestStorables extends TestCase {
         assertEquals("4", seq.getSomeString());
     }
 
+    public void test_sequenceRollback() throws Exception {
+        // Make sure sequence does not rollback with the main
+        // transaction. Sequences must always increase, even if enclosing
+        // transaction rolls back. Otherwise, you get race conditions and
+        // sequence values might get re-used.
+
+        Storage<SequenceAndAltKey> storage = getRepository().storageFor(SequenceAndAltKey.class);
+
+        SequenceAndAltKey obj = storage.prepare();
+        obj.setName("foo");
+        obj.setData("hello");
+        obj.insert();
+
+        int lastID = obj.getID();
+
+        for (int i=0; i<10000; i++) {
+            obj = storage.prepare();
+            obj.setName("foo");
+            obj.setData("world");
+            // Alternate key constraint.
+            assertFalse(obj.tryInsert());
+            // Sequence must always increase, even if insert failed.
+            assertTrue(obj.getID() > lastID);
+            lastID = obj.getID();
+        }
+    }
+
     public void test_oldIndexEntryDeletion() throws Exception {
         // Very simple test that ensures that old index entries are deleted
         // when the master record is updated. There is no guarantee that the
@@ -2286,6 +2323,474 @@ public class TestStorables extends TestCase {
         }
 
         assertEquals(total, actual);
+    }
+
+    public void test_lobInsert() throws Exception {
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        // Test null insert
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.insert();
+            assertEquals(null, lobs.getBlobValue());
+            assertEquals(null, lobs.getClobValue());
+            lobs.load();
+            assertEquals(null, lobs.getBlobValue());
+            assertEquals(null, lobs.getClobValue());
+        }
+
+        // Test content insert
+        int id;
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world"));
+            lobs.insert();
+            assertEquals("hello", lobs.getBlobValue().asString());
+            assertEquals("world", lobs.getClobValue().asString());
+            lobs.load();
+            assertEquals("hello", lobs.getBlobValue().asString());
+            assertEquals("world", lobs.getClobValue().asString());
+            id = lobs.getId();
+        }
+
+        // Test update of inserted lobs
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setId(id);
+            lobs.load();
+
+            Blob blob = lobs.getBlobValue();
+            OutputStream out = blob.openOutputStream();
+            out.write("the sky is falling".getBytes());
+            out.close();
+
+            assertEquals("the sky is falling", blob.asString());
+
+            lobs.load();
+            assertEquals(blob, lobs.getBlobValue());
+
+            Clob clob = lobs.getClobValue();
+            Writer writer = clob.openWriter();
+            writer.write("the quick brown fox");
+            writer.close();
+
+            assertEquals("the quick brown fox", clob.asString());
+
+            lobs.load();
+            assertEquals(blob, lobs.getBlobValue());
+            assertEquals(clob, lobs.getClobValue());
+        }
+
+        // Test insert failure
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setId(id);
+
+            Blob newBlob = new ByteArrayBlob("blob insert should fail".getBytes());
+            Clob newClob = new StringClob("clob insert should fail");
+
+            lobs.setBlobValue(newBlob);
+            lobs.setClobValue(newClob);
+
+            try {
+                lobs.insert();
+                fail();
+            } catch (UniqueConstraintException e) {
+            }
+
+            assertTrue(newBlob == lobs.getBlobValue());
+            assertTrue(newClob == lobs.getClobValue());
+        }
+    }
+
+    public void test_lobUpdate() throws Exception {
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        // Test null replaces null
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.insert();
+
+            lobs.setBlobValue(null);
+            lobs.setClobValue(null);
+
+            lobs.update();
+
+            assertEquals(null, lobs.getBlobValue());
+            assertEquals(null, lobs.getClobValue());
+
+            lobs.load();
+            assertEquals(null, lobs.getBlobValue());
+            assertEquals(null, lobs.getClobValue());
+        }
+
+        // Test null replaces content and verify content deleted
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world!!!"));
+            lobs.insert();
+
+            Blob blob = lobs.getBlobValue();
+            Clob clob = lobs.getClobValue();
+
+            assertEquals(5, blob.getLength());
+            assertEquals(8, clob.getLength());
+
+            lobs.setBlobValue(null);
+
+            lobs.update();
+
+            assertNull(lobs.getBlobValue());
+            assertEquals(clob, lobs.getClobValue());
+
+            try {
+                blob.getLength();
+                fail();
+            } catch (FetchNoneException e) {
+            }
+            assertEquals(8, clob.getLength());
+
+            lobs.load();
+
+            assertNull(lobs.getBlobValue());
+            assertEquals(clob, lobs.getClobValue());
+
+            lobs.setClobValue(null);
+
+            lobs.update();
+
+            assertNull(lobs.getBlobValue());
+            assertNull(lobs.getClobValue());
+
+            try {
+                blob.getLength();
+                fail();
+            } catch (FetchNoneException e) {
+            }
+            try {
+                clob.getLength();
+                fail();
+            } catch (FetchNoneException e) {
+            }
+
+            lobs.load();
+
+            assertNull(lobs.getBlobValue());
+            assertNull(lobs.getClobValue());
+
+            try {
+                blob.setLength(100);
+                fail();
+            } catch (PersistNoneException e) {
+            }
+            try {
+                clob.setLength(100);
+                fail();
+            } catch (PersistNoneException e) {
+            }
+
+            try {
+                blob.setValue("hello");
+                fail();
+            } catch (PersistNoneException e) {
+            }
+            try {
+                clob.setValue("hello");
+                fail();
+            } catch (PersistNoneException e) {
+            }
+        }
+
+        // Test content replaces null
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.insert();
+
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world"));
+
+            assertTrue(lobs.getBlobValue() instanceof ByteArrayBlob);
+            assertTrue(lobs.getClobValue() instanceof StringClob);
+
+            lobs.update();
+
+            assertEquals("hello", lobs.getBlobValue().asString());
+            assertEquals("world", lobs.getClobValue().asString());
+
+            assertFalse(lobs.getBlobValue() instanceof ByteArrayBlob);
+            assertFalse(lobs.getClobValue() instanceof StringClob);
+
+            lobs.load();
+
+            assertEquals("hello", lobs.getBlobValue().asString());
+            assertEquals("world", lobs.getClobValue().asString());
+
+            assertFalse(lobs.getBlobValue() instanceof ByteArrayBlob);
+            assertFalse(lobs.getClobValue() instanceof StringClob);
+        }
+
+        // Test content replaces content of same length
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world?"));
+            lobs.insert();
+
+            Blob blob = lobs.getBlobValue();
+            Clob clob = lobs.getClobValue();
+
+            lobs.setBlobValue(new ByteArrayBlob("12345".getBytes()));
+            lobs.update();
+
+            assertEquals(5, lobs.getBlobValue().getLength());
+            assertEquals(6, lobs.getClobValue().getLength());
+
+            assertEquals("12345", lobs.getBlobValue().asString());
+            assertEquals("world?", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+
+            lobs.setClobValue(new StringClob("123456"));
+            lobs.update();
+
+            assertEquals(5, lobs.getBlobValue().getLength());
+            assertEquals(6, lobs.getClobValue().getLength());
+
+            assertEquals("12345", lobs.getBlobValue().asString());
+            assertEquals("123456", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+        }
+
+        // Test content replaces content of longer length
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world?"));
+            lobs.insert();
+
+            Blob blob = lobs.getBlobValue();
+            Clob clob = lobs.getClobValue();
+
+            lobs.setBlobValue(new ByteArrayBlob("123".getBytes()));
+            lobs.update();
+
+            assertEquals(3, lobs.getBlobValue().getLength());
+            assertEquals(6, lobs.getClobValue().getLength());
+
+            assertEquals("123", lobs.getBlobValue().asString());
+            assertEquals("world?", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+
+            lobs.setClobValue(new StringClob("12"));
+            lobs.update();
+
+            assertEquals(3, lobs.getBlobValue().getLength());
+            assertEquals(2, lobs.getClobValue().getLength());
+
+            assertEquals("123", lobs.getBlobValue().asString());
+            assertEquals("12", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+        }
+
+        // Test content replaces content of shorter length
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world?"));
+            lobs.insert();
+
+            Blob blob = lobs.getBlobValue();
+            Clob clob = lobs.getClobValue();
+
+            lobs.setBlobValue(new ByteArrayBlob("123456789".getBytes()));
+            lobs.update();
+
+            assertEquals(9, lobs.getBlobValue().getLength());
+            assertEquals(6, lobs.getClobValue().getLength());
+
+            assertEquals("123456789", lobs.getBlobValue().asString());
+            assertEquals("world?", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+
+            lobs.setClobValue(new StringClob("1234567890"));
+            lobs.update();
+
+            assertEquals(9, lobs.getBlobValue().getLength());
+            assertEquals(10, lobs.getClobValue().getLength());
+
+            assertEquals("123456789", lobs.getBlobValue().asString());
+            assertEquals("1234567890", lobs.getClobValue().asString());
+
+            assertTrue(blob.equals(lobs.getBlobValue()));
+            assertTrue(clob.equals(lobs.getClobValue()));
+        }
+
+        // Test update failure
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setId(10000);
+
+            Blob newBlob = new ByteArrayBlob("blob update should fail".getBytes());
+            Clob newClob = new StringClob("clob update should fail");
+
+            lobs.setBlobValue(newBlob);
+            lobs.setClobValue(newClob);
+
+            try {
+                lobs.update();
+                fail();
+            } catch (PersistNoneException e) {
+            }
+
+            assertTrue(newBlob == lobs.getBlobValue());
+            assertTrue(newClob == lobs.getClobValue());
+        }
+    }
+
+    public void test_lobDelete() throws Exception {
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        // Test delete of null lob
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.insert();
+            lobs.delete();
+            assertEquals(null, lobs.getBlobValue());
+            assertEquals(null, lobs.getClobValue());
+        }
+
+        // Test delete of non-null lob
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+            lobs.setClobValue(new StringClob("world?"));
+            lobs.insert();
+
+            Blob blob = lobs.getBlobValue();
+            Clob clob = lobs.getClobValue();
+
+            lobs.delete();
+
+            try {
+                blob.getLength();
+                fail();
+            } catch (FetchNoneException e) {
+            }
+
+            try {
+                clob.getLength();
+                fail();
+            } catch (FetchNoneException e) {
+            }
+
+            try {
+                blob.setLength(100);
+                fail();
+            } catch (PersistNoneException e) {
+            }
+            try {
+                clob.setLength(100);
+                fail();
+            } catch (PersistNoneException e) {
+            }
+
+            try {
+                blob.setValue("hello");
+                fail();
+            } catch (PersistNoneException e) {
+            }
+            try {
+                clob.setValue("hello");
+                fail();
+            } catch (PersistNoneException e) {
+            }
+        }
+
+        // Test delete failure
+        {
+            StorableWithLobs lobs = storage.prepare();
+            lobs.setId(10000);
+
+            Blob newBlob = new ByteArrayBlob("blob update should fail".getBytes());
+            Clob newClob = new StringClob("clob update should fail");
+
+            lobs.setBlobValue(newBlob);
+            lobs.setClobValue(newClob);
+
+            try {
+                lobs.delete();
+                fail();
+            } catch (PersistNoneException e) {
+            }
+
+            assertTrue(newBlob == lobs.getBlobValue());
+            assertTrue(newClob == lobs.getClobValue());
+        }
+    }
+
+    public void test_insertLobBig() throws Exception {
+        // LobEngine tests are fairly exhaustive when it comes to large
+        // content. This is just a basic check.
+
+        final long seed = 287623451234L;
+        final int length = 123456;
+
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        StorableWithLobs lobs = storage.prepare();
+        lobs.setBlobValue(new ByteArrayBlob(1));
+        lobs.insert();
+
+        Random rnd = new Random(seed);
+        OutputStream out = lobs.getBlobValue().openOutputStream(0, 500);
+        for (int i=0; i<length; i++) {
+            out.write(rnd.nextInt());
+        }
+        out.close();
+
+        assertEquals(length, lobs.getBlobValue().getLength());
+
+        lobs.load();
+
+        rnd = new Random(seed);
+        InputStream in = lobs.getBlobValue().openInputStream(0, 2000);
+        for (int i=0; i<length; i++) {
+            assertEquals(rnd.nextInt() & 0xff, in.read());
+        }
+        assertEquals(-1, in.read());
+        in.close();
+
+        // Verify content stored in StoredLob.Block.
+        // Only applicable if LobEngine is used.
+        /*
+        Query<StoredLob.Block> query = getRepository().storageFor(StoredLob.Block.class).query();
+        Cursor<StoredLob.Block> cursor = query.fetch();
+        assertTrue(cursor.hasNext());
+        cursor.close();
+
+        // Verify its all gone after delete.
+        lobs.delete();
+
+        cursor = query.fetch();
+        assertFalse(cursor.hasNext());
+        cursor.close();
+
+        // Master record should be gone too.
+        Cursor<?> c = getRepository().storageFor(StoredLob.class).query().fetch();
+        assertFalse(c.hasNext());
+        c.close();
+        */
     }
 
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {
