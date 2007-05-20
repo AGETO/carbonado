@@ -27,6 +27,8 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import com.amazon.carbonado.Cursor;
+import com.amazon.carbonado.FetchException;
+import com.amazon.carbonado.Query;
 import com.amazon.carbonado.Storable;
 
 import com.amazon.carbonado.cursor.IteratorCursor;
@@ -726,8 +728,17 @@ public class TestIndexedQueryExecutor extends TestCase {
         boolean mReverseRange;
         boolean mReverseOrder;
 
-        public Mock(StorableIndex<S> index, CompositeScore<S> score) {
+        public Mock(StorableIndex<S> index, CompositeScore<S> score) throws FetchException {
             super(null, index, score);
+        }
+
+        public Query<?> indexEntryQuery(StorableIndex<S> index) {
+            return null;
+        }
+
+        public Cursor<S> fetchFromIndexEntryQuery(StorableIndex<S> index, Query<?> indexEntryQuery)
+        {
+            throw new UnsupportedOperationException();
         }
 
         public Cursor<S> fetchSubset(StorableIndex<S> index,

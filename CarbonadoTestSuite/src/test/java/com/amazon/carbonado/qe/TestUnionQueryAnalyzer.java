@@ -37,6 +37,7 @@ import com.amazon.carbonado.repo.toy.ToyRepository;
 
 import com.amazon.carbonado.stored.Address;
 import com.amazon.carbonado.stored.Order;
+import com.amazon.carbonado.stored.OverIndexedUserAddress;
 import com.amazon.carbonado.stored.Shipment;
 import com.amazon.carbonado.stored.Shipper;
 import com.amazon.carbonado.stored.StorableTestBasic;
@@ -283,6 +284,42 @@ public class TestUnionQueryAnalyzer extends TestCase {
         assertEquals(0, res_0.getRemainderOrdering().size());
         assertEquals(Filter.filterFor(Shipment.class, "shipmentID = ? | orderID = ?"),
                      res_0.getRemainderFilter().unbind());
+    }
+
+    public void testSimpleCoveringMerge() throws Exception {
+        // Because query has an 'or' operation, the analyzer will initially
+        // split this into a union. After futher analysis, it should decide
+        // that this offers no benefit and will merge them back.
+        UnionQueryAnalyzer uqa =
+            new UnionQueryAnalyzer(OverIndexedUserAddress.class,
+                                   TestIndexedQueryAnalyzer.RepoAccess.INSTANCE);
+        Filter<OverIndexedUserAddress> filter = Filter.filterFor
+            (OverIndexedUserAddress.class,
+             "city = ? & (city = ? | line1 = ?)");
+        filter = filter.bind();
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        List<IndexedQueryAnalyzer<OverIndexedUserAddress>.Result> subResults =
+            result.getSubResults();
+
+        assertEquals(1, subResults.size());
+        IndexedQueryAnalyzer<OverIndexedUserAddress>.Result res_0 = subResults.get(0);
+
+        assertTrue(res_0.handlesAnything());
+        assertEquals(Filter.filterFor(OverIndexedUserAddress.class, "city = ?").bind(),
+                     res_0.getCompositeScore().getFilteringScore().getIdentityFilter());
+        assertEquals(makeIndex(OverIndexedUserAddress.class,
+                               "city", "state", "country", "line1", "line2"),
+                     res_0.getLocalIndex());
+        assertEquals(null, res_0.getForeignIndex());
+        assertEquals(null, res_0.getForeignProperty());
+        assertEquals(0, res_0.getRemainderOrdering().size());
+        assertEquals(Filter.filterFor(OverIndexedUserAddress.class, "city = ? | line1 = ?"),
+                     res_0.getRemainderFilter().unbind());
+
+        Filter<OverIndexedUserAddress> covering =
+            res_0.getCompositeScore().getFilteringScore().getCoveringFilter();
+        assertEquals(Filter.filterFor(OverIndexedUserAddress.class, "city = ? | line1 = ?"),
+                     covering.unbind());
     }
 
     public void testFullScan() throws Exception {

@@ -48,6 +48,7 @@ import com.amazon.carbonado.repo.toy.ToyRepository;
 
 import com.amazon.carbonado.stored.Address;
 import com.amazon.carbonado.stored.Order;
+import com.amazon.carbonado.stored.OverIndexedUserAddress;
 import com.amazon.carbonado.stored.Shipment;
 import com.amazon.carbonado.stored.Shipper;
 import com.amazon.carbonado.stored.StorableTestBasic;
@@ -337,6 +338,33 @@ public class TestIndexedQueryAnalyzer extends TestCase {
                      joinExec2.getFilter().unbind().disjunctiveNormalForm());
     }
 
+    public void testCoveringIndex() throws Exception {
+        IndexedQueryAnalyzer<OverIndexedUserAddress> iqa =
+            new IndexedQueryAnalyzer<OverIndexedUserAddress>
+            (OverIndexedUserAddress.class, RepoAccess.INSTANCE);
+        Filter<OverIndexedUserAddress> filter = Filter.filterFor
+            (OverIndexedUserAddress.class, "country > ? & city != ? & state = ? & postalCode = ?");
+        FilterValues<OverIndexedUserAddress> values = filter.initialFilterValues();
+        filter = values.getFilter();
+        IndexedQueryAnalyzer<OverIndexedUserAddress>.Result result = iqa.analyze(filter, null);
+
+        QueryExecutor<OverIndexedUserAddress> qe = result.createExecutor();
+
+        StringBuffer buf = new StringBuffer();
+        qe.printPlan(buf, 0, values);
+        String plan = buf.toString();
+
+        String expected =
+            "filter: postalCode = ?\n" +
+            "  index scan: com.amazon.carbonado.stored.OverIndexedUserAddress\n" +
+            "  ...index: {properties=[+state, +city, +country, +line2, +line1], unique=false}\n" + 
+            "  ...identity filter: state = ?\n" +
+            "  ...covering filter: country > ? & city != ?";
+
+        //System.out.println(plan);
+        assertEquals(expected, plan);
+    }
+
     static class RepoAccess implements RepositoryAccess {
         static final RepoAccess INSTANCE = new RepoAccess();
 
@@ -418,6 +446,13 @@ public class TestIndexedQueryAnalyzer extends TestCase {
                     makeIndex(mType, "+intProp", "stringProp", "~id").unique(true),
                     makeIndex(mType, "-doubleProp", "+longProp", "~id").unique(true),
                 };
+            } else if (OverIndexedUserAddress.class.isAssignableFrom(mType)) {
+                indexes = new StorableIndex[] {
+                    makeIndex(mType, "addressID"),
+                    makeIndex(mType, "country", "state", "city", "line1", "line2", "postalCode"),
+                    makeIndex(mType, "state", "city", "country", "line2", "line1"),
+                    makeIndex(mType, "city", "state", "country", "line1", "line2"),
+                };
             } else {
                 indexes = new StorableIndex[0];
             }
@@ -442,6 +477,15 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         }
 
         public Cursor<S> fetchOne(StorableIndex<S> index, Object[] identityValues) {
+            throw new UnsupportedOperationException();
+        }
+
+        public Query<?> indexEntryQuery(StorableIndex<S> index) {
+            return new EmptyQuery();
+        }
+
+        public Cursor<S> fetchFromIndexEntryQuery(StorableIndex<S> index, Query<?> indexEntryQuery)
+        {
             throw new UnsupportedOperationException();
         }
 

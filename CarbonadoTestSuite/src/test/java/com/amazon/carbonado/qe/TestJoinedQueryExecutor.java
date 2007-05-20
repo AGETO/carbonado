@@ -263,6 +263,15 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             throw new UnsupportedOperationException();
         }
 
+        public Query<?> indexEntryQuery(StorableIndex<S> index) {
+            return null;
+        }
+
+        public Cursor<S> fetchFromIndexEntryQuery(StorableIndex<S> index, Query<?> indexEntryQuery)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public Cursor<S> fetchSubset(StorableIndex<S> index,
                                      Object[] identityValues,
                                      BoundaryType rangeStartBoundary,
