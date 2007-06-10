@@ -123,6 +123,14 @@ public class Dummy implements Storable {
         throw error();
     }
 
+    public Object getPropertyValue(String propertyName) {
+        throw error();
+    }
+
+    public void setPropertyValue(String propertyName, Object value) {
+        throw error();
+    }
+
     public Storable copy() {
         throw error();
     }

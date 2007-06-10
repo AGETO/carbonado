@@ -402,7 +402,7 @@ public class TestSyntheticStorableBuilders extends TestCase {
             if (method.getName().startsWith("set") ) {
                 Class[] paramTypes = method.getParameterTypes();
                 Class type = paramTypes[0];
-                if (vendor.hasValue(type)) {
+                if (vendor.hasValue(type) && paramTypes.length == 1) {
                     Object value = vendor.getValue(type);
                     method.invoke(storable, new Object[] {value});
                     valueMap.put(method.getName().substring(3), value);

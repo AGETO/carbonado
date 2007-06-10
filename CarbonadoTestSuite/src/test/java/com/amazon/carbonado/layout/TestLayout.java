@@ -33,7 +33,6 @@ import org.cojen.classfile.Modifiers;
 import org.cojen.classfile.TypeDesc;
 import org.cojen.classfile.attribute.Annotation;
 
-import org.cojen.util.BeanPropertyAccessor;
 import org.cojen.util.ClassInjector;
 
 import com.amazon.carbonado.adapter.YesNoAdapter;
@@ -359,63 +358,61 @@ public class TestLayout extends TestCase {
             // One extra property.
             Class<? extends StorableTestMinimal> type =
                 defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.INT);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(2);
-            bean.setPropertyValue(stm, "prop0", 200);
+            stm.setPropertyValue("prop0", 200);
             stm.insert();
 
             // Now load old generation.
             stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+            assertEquals(0, ((Integer) stm.getPropertyValue("prop0")).intValue());
 
             // Verify load of new generation.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(200, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+            assertEquals(200, ((Integer) stm.getPropertyValue("prop0")).intValue());
 
             // Load old generation and verify that new property value is cleared.
             stm.markAllPropertiesDirty();
             stm.setId(1);
             stm.load();
-            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+            assertEquals(0, ((Integer) stm.getPropertyValue("prop0")).intValue());
         }
 
         {
             // Two extra properties.
             Class<? extends StorableTestMinimal> type =
                 defineStorable(TEST_STORABLE_NAME, 2, TypeDesc.INT);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(3);
-            bean.setPropertyValue(stm, "prop0", 300);
-            bean.setPropertyValue(stm, "prop1", 301);
+            stm.setPropertyValue("prop0", 300);
+            stm.setPropertyValue("prop1", 301);
             stm.insert();
 
             // Now load old generations.
             stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
-            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop1")).intValue());
+            assertEquals(0, ((Integer) stm.getPropertyValue("prop0")).intValue());
+            assertEquals(0, ((Integer) stm.getPropertyValue("prop1")).intValue());
 
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(200, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
-            assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop1")).intValue());
+            assertEquals(200, ((Integer) stm.getPropertyValue("prop0")).intValue());
+            assertEquals(0, ((Integer) stm.getPropertyValue("prop1")).intValue());
 
             // Verify load of new generation.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
-            assertEquals(300, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
-            assertEquals(301, ((Integer) bean.getPropertyValue(stm, "prop1")).intValue());
+            assertEquals(300, ((Integer) stm.getPropertyValue("prop0")).intValue());
+            assertEquals(301, ((Integer) stm.getPropertyValue("prop1")).intValue());
         }
 
         {
@@ -424,12 +421,11 @@ public class TestLayout extends TestCase {
             for (int i=3; i<=130; i++) {
                 Class<? extends StorableTestMinimal> type =
                     defineStorable(TEST_STORABLE_NAME, i, TypeDesc.INT);
-                BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
                 Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
                 StorableTestMinimal stm = storage.prepare();
                 stm.setId(i + 3);
                 for (int j=0; j<i; j++) {
-                    bean.setPropertyValue(stm, "prop" + j, 400 + j);
+                    stm.setPropertyValue("prop" + j, 400 + j);
                 }
                 stm.insert();
 
@@ -437,9 +433,9 @@ public class TestLayout extends TestCase {
                 stm = storage.prepare();
                 stm.setId(3);
                 stm.load();
-                assertEquals(300, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
-                assertEquals(301, ((Integer) bean.getPropertyValue(stm, "prop1")).intValue());
-                assertEquals(0, ((Integer) bean.getPropertyValue(stm, "prop2")).intValue());
+                assertEquals(300, ((Integer) stm.getPropertyValue("prop0")).intValue());
+                assertEquals(301, ((Integer) stm.getPropertyValue("prop1")).intValue());
+                assertEquals(0, ((Integer) stm.getPropertyValue("prop2")).intValue());
             }
         }
     }
@@ -449,12 +445,11 @@ public class TestLayout extends TestCase {
             // Two extra properties.
             Class<? extends StorableTestMinimal> type =
                 defineStorable(TEST_STORABLE_NAME, 2, TypeDesc.INT);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
-            bean.setPropertyValue(stm, "prop0", 100);
-            bean.setPropertyValue(stm, "prop1", 101);
+            stm.setPropertyValue("prop0", 100);
+            stm.setPropertyValue("prop1", 101);
             stm.insert();
         }
 
@@ -462,31 +457,29 @@ public class TestLayout extends TestCase {
             // One extra property.
             Class<? extends StorableTestMinimal> type =
                 defineStorable(TEST_STORABLE_NAME, 1, TypeDesc.INT);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(2);
-            bean.setPropertyValue(stm, "prop0", 200);
+            stm.setPropertyValue("prop0", 200);
             stm.insert();
 
             // Now load old generation.
             stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(100, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+            assertEquals(100, ((Integer) stm.getPropertyValue("prop0")).intValue());
 
             // Verify load of new generation.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(200, ((Integer) bean.getPropertyValue(stm, "prop0")).intValue());
+            assertEquals(200, ((Integer) stm.getPropertyValue("prop0")).intValue());
         }
 
         {
             // Zero extra properties.
             Class<? extends StorableTestMinimal> type =
                 defineStorable(TEST_STORABLE_NAME, 0, TypeDesc.INT);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(type);
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(type);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(3);
@@ -533,40 +526,36 @@ public class TestLayout extends TestCase {
         {
             // Insert int prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithInt);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithInt);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
-            bean.setPropertyValue(stm, "prop0", 100);
+            stm.setPropertyValue("prop0", 100);
             stm.insert();
         }
 
         {
             // Insert String prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithStr);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithStr);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(2);
-            bean.setPropertyValue(stm, "prop0", "hello");
+            stm.setPropertyValue("prop0", "hello");
             stm.insert();
         }
 
         {
             // Insert long prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithLong);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithLong);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(3);
-            bean.setPropertyValue(stm, "prop0", 0x100000001L);
+            stm.setPropertyValue("prop0", 0x100000001L);
             stm.insert();
         }
 
         {
             // Insert date prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithDate);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithDate);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(4);
-            bean.setPropertyValue(stm, "prop0", date);
+            stm.setPropertyValue("prop0", date);
             stm.insert();
         }
 
@@ -574,11 +563,10 @@ public class TestLayout extends TestCase {
             // Insert int prop0, String prop1.
             Storage<? extends StorableTestMinimal> storage =
                 mRepository.storageFor(typeWithIntAndStr);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithIntAndStr);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(5);
-            bean.setPropertyValue(stm, "prop0", 500);
-            bean.setPropertyValue(stm, "prop1", "world");
+            stm.setPropertyValue("prop0", 500);
+            stm.setPropertyValue("prop1", "world");
             stm.insert();
         }
 
@@ -586,10 +574,9 @@ public class TestLayout extends TestCase {
             // Insert Nullable Integer prop0, value is non-null
             Storage<? extends StorableTestMinimal> storage =
                 mRepository.storageFor(typeWithNullableInteger);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(6);
-            bean.setPropertyValue(stm, "prop0", new Integer(9876));
+            stm.setPropertyValue("prop0", new Integer(9876));
             stm.insert();
         }
 
@@ -597,10 +584,9 @@ public class TestLayout extends TestCase {
             // Insert Nullable Integer prop0, value is null
             Storage<? extends StorableTestMinimal> storage =
                 mRepository.storageFor(typeWithNullableInteger);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(7);
-            bean.setPropertyValue(stm, "prop0", null);
+            stm.setPropertyValue("prop0", null);
             stm.insert();
         }
 
@@ -608,189 +594,185 @@ public class TestLayout extends TestCase {
         {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithInt);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithInt);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(100, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(100, stm.getPropertyValue("prop0"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
             // Cast of 0x100000001L to int yields 1.
-            assertEquals(1, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(1, stm.getPropertyValue("prop0"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(500, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(500, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(9876, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
         }
 
         // Load using String property generation.
         {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithStr);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithStr);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals("hello", bean.getPropertyValue(stm, "prop0"));
+            assertEquals("hello", stm.getPropertyValue("prop0"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
         }
 
         // Load using long property generation.
         {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithLong);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithLong);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(100L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(100L, stm.getPropertyValue("prop0"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(0L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0L, stm.getPropertyValue("prop0"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
-            assertEquals(0x100000001L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0x100000001L, stm.getPropertyValue("prop0"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(0L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0L, stm.getPropertyValue("prop0"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(500L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(500L, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(9876L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(9876L, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(0L, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(0L, stm.getPropertyValue("prop0"));
         }
 
         // Load using date property generation.
         {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage = mRepository.storageFor(typeWithDate);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithDate);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(date, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(date, stm.getPropertyValue("prop0"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
         }
 
         // Load using int and String property generation.
@@ -798,55 +780,54 @@ public class TestLayout extends TestCase {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage =
                 mRepository.storageFor(typeWithIntAndStr);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithIntAndStr);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(100, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(100, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
             // Cast of 0x100000001L to int yields 1.
-            assertEquals(1, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(1, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(500, bean.getPropertyValue(stm, "prop0"));
-            assertEquals("world", bean.getPropertyValue(stm, "prop1"));
+            assertEquals(500, stm.getPropertyValue("prop0"));
+            assertEquals("world", stm.getPropertyValue("prop1"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(9876, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(0, bean.getPropertyValue(stm, "prop0"));
-            assertEquals(null, bean.getPropertyValue(stm, "prop1"));
+            assertEquals(0, stm.getPropertyValue("prop0"));
+            assertEquals(null, stm.getPropertyValue("prop1"));
         }
 
         // Load using Nullable Integer property generation.
@@ -854,48 +835,47 @@ public class TestLayout extends TestCase {
             // Load against int prop0.
             Storage<? extends StorableTestMinimal> storage =
                 mRepository.storageFor(typeWithNullableInteger);
-            BeanPropertyAccessor bean = BeanPropertyAccessor.forClass(typeWithNullableInteger);
             StorableTestMinimal stm = storage.prepare();
             stm.setId(1);
             stm.load();
-            assertEquals(100, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(100, stm.getPropertyValue("prop0"));
 
             // Load against String prop0.
             stm = storage.prepare();
             stm.setId(2);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against long prop0.
             stm = storage.prepare();
             stm.setId(3);
             stm.load();
             // Cast of 0x100000001L to int yields 1.
-            assertEquals(1, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(1, stm.getPropertyValue("prop0"));
 
             // Load against date prop0.
             stm = storage.prepare();
             stm.setId(4);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
 
             // Load against int prop0, String prop1.
             stm = storage.prepare();
             stm.setId(5);
             stm.load();
-            assertEquals(500, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(500, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value non-null.
             stm = storage.prepare();
             stm.setId(6);
             stm.load();
-            assertEquals(9876, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(9876, stm.getPropertyValue("prop0"));
 
             // Load against Integer prop0, value null.
             stm = storage.prepare();
             stm.setId(7);
             stm.load();
-            assertEquals(null, bean.getPropertyValue(stm, "prop0"));
+            assertEquals(null, stm.getPropertyValue("prop0"));
         }
     }
 

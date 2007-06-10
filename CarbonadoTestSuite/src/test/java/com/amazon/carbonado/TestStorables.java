@@ -3085,6 +3085,15 @@ public class TestStorables extends TestCase {
             return false;
         }
 
+        public Object getPropertyValue(String name) {
+            if (mTrace) System.out.println("getPropertyValue(" + name + ')');
+            return null;
+        }
+
+        public void setPropertyValue(String name, Object value) {
+            if (mTrace) System.out.println("setPropertyValue(" + name + ", " + value + ')');
+        }
+
         public Repository getRootRepository() {
             return null;
         }
