@@ -18,6 +18,9 @@
 
 package com.amazon.carbonado.repo.replicated;
 
+import java.io.OutputStream;
+import java.io.Writer;
+
 import junit.framework.TestSuite;
 
 import com.amazon.carbonado.Repository;
@@ -28,7 +31,14 @@ import com.amazon.carbonado.TestUtilities;
 
 import com.amazon.carbonado.repo.replicated.ReplicatedRepository;
 
+import com.amazon.carbonado.lob.Blob;
+import com.amazon.carbonado.lob.Clob;
+import com.amazon.carbonado.lob.ByteArrayBlob;
+import com.amazon.carbonado.lob.StringClob;
+
 import com.amazon.carbonado.sequence.StoredSequence;
+
+import com.amazon.carbonado.stored.StorableWithLobs;
 
 /**
  *
@@ -85,5 +95,78 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
         seq = master.prepare();
         seq.setName("foo");
         assertTrue(seq.tryLoad());
+
+    public void testBlobReplication() throws Exception {
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        Storage<StorableWithLobs> replica = ((ReplicatedRepository) getRepository())
+            .getReplicaRepository().storageFor(StorableWithLobs.class);
+        Storage<StorableWithLobs> master = ((ReplicatedRepository) getRepository())
+            .getMasterRepository().storageFor(StorableWithLobs.class);
+
+        StorableWithLobs lobs = storage.prepare();
+        lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
+        lobs.insert();
+
+        StorableWithLobs maLobs = master.prepare();
+        maLobs.setId(lobs.getId());
+        maLobs.load();
+        assertEquals("hello", maLobs.getBlobValue().asString());
+
+        // Test update via stream.
+
+        Blob blob = lobs.getBlobValue();
+        OutputStream out = blob.openOutputStream();
+        out.write("world!!!".getBytes());
+        out.close();
+
+        assertEquals("world!!!", blob.asString());
+        assertEquals("world!!!", maLobs.getBlobValue().asString());
+
+        // Test length change.
+        blob.setLength(6);
+
+        assertEquals(6, blob.getLength());
+        assertEquals(6, maLobs.getBlobValue().getLength());
+
+        assertEquals("world!", blob.asString());
+        assertEquals("world!", maLobs.getBlobValue().asString());
+    }
+
+    public void testClobReplication() throws Exception {
+        Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
+
+        Storage<StorableWithLobs> replica = ((ReplicatedRepository) getRepository())
+            .getReplicaRepository().storageFor(StorableWithLobs.class);
+        Storage<StorableWithLobs> master = ((ReplicatedRepository) getRepository())
+            .getMasterRepository().storageFor(StorableWithLobs.class);
+
+        StorableWithLobs lobs = storage.prepare();
+        lobs.setClobValue(new StringClob("hello"));
+        lobs.insert();
+
+        StorableWithLobs maLobs = master.prepare();
+        maLobs.setId(lobs.getId());
+        maLobs.load();
+        assertEquals("hello", maLobs.getClobValue().asString());
+
+        // Test update via stream.
+
+        Clob clob = lobs.getClobValue();
+        Writer out = clob.openWriter();
+        out.write("world!!!");
+        out.close();
+
+        assertEquals("world!!!", clob.asString());
+        assertEquals("world!!!", maLobs.getClobValue().asString());
+
+        // Test length change.
+        clob.setLength(6);
+
+        assertEquals(6, clob.getLength());
+        assertEquals(6, maLobs.getClobValue().getLength());
+
+        assertEquals("world!", clob.asString());
+        assertEquals("world!", maLobs.getClobValue().asString());
     }
 }
