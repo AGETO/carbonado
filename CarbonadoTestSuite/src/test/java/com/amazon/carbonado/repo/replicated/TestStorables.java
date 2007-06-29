@@ -95,6 +95,7 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
         seq = master.prepare();
         seq.setName("foo");
         assertTrue(seq.tryLoad());
+    }
 
     public void testBlobReplication() throws Exception {
         Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
