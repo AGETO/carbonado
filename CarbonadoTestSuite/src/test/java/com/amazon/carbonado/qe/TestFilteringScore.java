@@ -624,9 +624,10 @@ public class TestFilteringScore extends TestCase {
         score_1 = FilteringScore.evaluate(ix_1, filter);
         score_2 = FilteringScore.evaluate(ix_2, filter);
 
-        // Second is better because it has fewer properties.
-        assertEquals(1, comp.compare(score_1, score_2));
-        assertEquals(-1, comp.compare(score_2, score_1));
+        // Same -- number of properties no longer considered except by
+        // OrderingScore and CompositeScore.
+        assertEquals(0, comp.compare(score_1, score_2));
+        assertEquals(0, comp.compare(score_2, score_1));
 
         score_1 = FilteringScore.evaluate(ix_1.clustered(true), filter);
         score_2 = FilteringScore.evaluate(ix_2, filter);
@@ -637,9 +638,10 @@ public class TestFilteringScore extends TestCase {
         score_1 = FilteringScore.evaluate(ix_1, filter);
         score_2 = FilteringScore.evaluate(ix_2, filter);
 
-        // Although no property matches, second is better just because it has fewer properties.
-        assertEquals(1, comp.compare(score_1, score_2));
-        assertEquals(-1, comp.compare(score_2, score_1));
+        // No property matches and number of properties no longer considered
+        // except by OrderingScore and CompositeScore.
+        assertEquals(0, comp.compare(score_1, score_2));
+        assertEquals(0, comp.compare(score_2, score_1));
 
         filter = Filter.filterFor(StorableTestBasic.class, "stringProp = ?");
         score_1 = FilteringScore.evaluate(ix_1.clustered(true), filter);
@@ -660,9 +662,10 @@ public class TestFilteringScore extends TestCase {
         score_1 = FilteringScore.evaluate(ix_1, filter);
         score_2 = FilteringScore.evaluate(ix_2, filter);
 
-        // Second is better because it has fewer properties.
-        assertEquals(1, comp.compare(score_1, score_2));
-        assertEquals(-1, comp.compare(score_2, score_1));
+        // Same -- number of properties no longer considered except by
+        // OrderingScore and CompositeScore.
+        assertEquals(0, comp.compare(score_1, score_2));
+        assertEquals(0, comp.compare(score_2, score_1));
 
         filter = Filter.filterFor(StorableTestBasic.class, "id = ? & stringProp = ?");
         score_1 = FilteringScore.evaluate(ix_1, filter);
@@ -692,9 +695,10 @@ public class TestFilteringScore extends TestCase {
         score_1 = FilteringScore.evaluate(ix_1, filter);
         score_2 = FilteringScore.evaluate(ix_2, filter);
 
-        // Second is better because it has fewer properties.
-        assertEquals(1, comp.compare(score_1, score_2));
-        assertEquals(-1, comp.compare(score_2, score_1));
+        // Same -- number of properties no longer considered except by
+        // OrderingScore and CompositeScore.
+        assertEquals(0, comp.compare(score_1, score_2));
+        assertEquals(0, comp.compare(score_2, score_1));
 
         filter = Filter.filterFor(StorableTestBasic.class, "id >= ? & id < ?");
         score_1 = FilteringScore.evaluate(ix_1.clustered(true), filter);
@@ -709,9 +713,10 @@ public class TestFilteringScore extends TestCase {
         score_1 = FilteringScore.evaluate(ix_1.clustered(true), filter);
         score_2 = FilteringScore.evaluate(ix_2.clustered(true), filter);
 
-        // Second is better because it has fewer properties.
-        assertEquals(1, comp.compare(score_1, score_2));
-        assertEquals(-1, comp.compare(score_2, score_1));
+        // Same -- number of properties no longer considered except by
+        // OrderingScore and CompositeScore.
+        assertEquals(0, comp.compare(score_1, score_2));
+        assertEquals(0, comp.compare(score_2, score_1));
     }
 
     public void testArrangementFullComparator() throws Exception {
