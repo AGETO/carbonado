@@ -66,24 +66,7 @@ public class TestGroupedCursor extends TestCase {
         // Should already be sorted, but no harm done
         Collections.sort(triples);
 
-        Cursor<Pair> cursor = new GroupedCursor<Triple, Pair>
-            (new IteratorCursor<Triple>(triples), Triple.class, "a", "b")
-        {
-            private Pair aggregate;
-
-            protected void beginGroup(Triple groupLeader) {
-                aggregate = new Pair(groupLeader.getA(), groupLeader.getB());
-                aggregate.add(groupLeader.getC());
-            }
-
-            protected void addToGroup(Triple groupMember) {
-                aggregate.add(groupMember.getC());
-            }
-
-            protected Pair finishGroup() {
-                return aggregate;
-            }
-        };
+        Cursor<Pair> cursor = new TriplesToPairs(triples);
 
         List<Pair> pairs = new ArrayList<Pair>();
 
@@ -110,6 +93,97 @@ public class TestGroupedCursor extends TestCase {
         assertEquals(116, pairs.get(3).sum);
     }
 
+    public void testLastGroupOneElement() throws Exception {
+        List<Triple> triples = new ArrayList<Triple>();
+        triples.add(new Triple(1, 1, 1));
+        triples.add(new Triple(1, 1, 2));
+        triples.add(new Triple(1, 1, 3));
+        triples.add(new Triple(1, 2, 5));
+        triples.add(new Triple(1, 2, 9));
+        triples.add(new Triple(3, 1, 10));
+
+        // Should already be sorted, but no harm done
+        Collections.sort(triples);
+
+        Cursor<Pair> cursor = new TriplesToPairs(triples);
+
+        List<Pair> pairs = new ArrayList<Pair>();
+
+        while (cursor.hasNext()) {
+            pairs.add(cursor.next());
+        }
+
+        assertEquals(3, pairs.size());
+
+        assertEquals(1, pairs.get(0).getA());
+        assertEquals(1, pairs.get(0).getB());
+        assertEquals(6, pairs.get(0).sum);
+
+        assertEquals(1, pairs.get(1).getA());
+        assertEquals(2, pairs.get(1).getB());
+        assertEquals(14, pairs.get(1).sum);
+
+        assertEquals(3, pairs.get(2).getA());
+        assertEquals(1, pairs.get(2).getB());
+        assertEquals(10, pairs.get(2).sum);
+    }
+
+    public void testOneElement() throws Exception {
+        List<Triple> triples = new ArrayList<Triple>();
+        triples.add(new Triple(3, 1, 10));
+
+        Cursor<Pair> cursor = new TriplesToPairs(triples);
+
+        List<Pair> pairs = new ArrayList<Pair>();
+
+        while (cursor.hasNext()) {
+            pairs.add(cursor.next());
+        }
+
+        assertEquals(1, pairs.size());
+
+        assertEquals(3, pairs.get(0).getA());
+        assertEquals(1, pairs.get(0).getB());
+        assertEquals(10, pairs.get(0).sum);
+    }
+
+    public void testOneElementGroups() throws Exception {
+        List<Triple> triples = new ArrayList<Triple>();
+        triples.add(new Triple(1, 1, 1));
+        triples.add(new Triple(1, 2, 5));
+        triples.add(new Triple(3, 1, 10));
+        triples.add(new Triple(3, 2, 16));
+
+        // Should already be sorted, but no harm done
+        Collections.sort(triples);
+
+        Cursor<Pair> cursor = new TriplesToPairs(triples);
+
+        List<Pair> pairs = new ArrayList<Pair>();
+
+        while (cursor.hasNext()) {
+            pairs.add(cursor.next());
+        }
+
+        assertEquals(4, pairs.size());
+
+        assertEquals(1, pairs.get(0).getA());
+        assertEquals(1, pairs.get(0).getB());
+        assertEquals(1, pairs.get(0).sum);
+
+        assertEquals(1, pairs.get(1).getA());
+        assertEquals(2, pairs.get(1).getB());
+        assertEquals(5, pairs.get(1).sum);
+
+        assertEquals(3, pairs.get(2).getA());
+        assertEquals(1, pairs.get(2).getB());
+        assertEquals(10, pairs.get(2).sum);
+
+        assertEquals(3, pairs.get(3).getA());
+        assertEquals(2, pairs.get(3).getB());
+        assertEquals(16, pairs.get(3).sum);
+    }
+
     static int compare(int x, int y) {
         if (x < y) {
             return -1;
@@ -117,6 +191,27 @@ public class TestGroupedCursor extends TestCase {
             return 1;
         }
         return 0;
+    }
+
+    class TriplesToPairs extends GroupedCursor<Triple, Pair> {
+        TriplesToPairs(List<Triple> triples) {
+            super(new IteratorCursor<Triple>(triples), Triple.class, "a", "b");
+        }
+
+        private Pair aggregate;
+
+        protected void beginGroup(Triple groupLeader) {
+            aggregate = new Pair(groupLeader.getA(), groupLeader.getB());
+            aggregate.add(groupLeader.getC());
+        }
+
+        protected void addToGroup(Triple groupMember) {
+            aggregate.add(groupMember.getC());
+        }
+
+        protected Pair finishGroup() {
+            return aggregate;
+        }
     }
 
     public static class Pair implements Comparable {
