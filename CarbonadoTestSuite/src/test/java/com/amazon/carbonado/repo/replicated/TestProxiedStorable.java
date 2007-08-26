@@ -33,8 +33,6 @@ import com.amazon.carbonado.SupportException;
 import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.TestStorableBase;
 
-import com.amazon.carbonado.spi.WrappedStorage;
-
 /*
  * TestProxiedStorable
  *

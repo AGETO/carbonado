@@ -57,7 +57,6 @@ import com.amazon.carbonado.lob.Clob;
 import com.amazon.carbonado.lob.StringClob;
 
 import com.amazon.carbonado.spi.RepairExecutor;
-import com.amazon.carbonado.gen.WrappedSupport;
 
 import com.amazon.carbonado.stored.*;
 
@@ -2898,7 +2897,7 @@ public class TestStorables extends TestCase {
         public abstract int setAssymetricSET();
     }
 
-    public static class InvocationTracker extends StorableTestBasic implements WrappedSupport {
+    public static class InvocationTracker extends StorableTestBasic {
         String mName;
         long mInvocationTracks;
 
@@ -3029,10 +3028,6 @@ public class TestStorables extends TestCase {
             return false;
         }
 
-        public WrappedSupport createSupport(Storable storable) {
-            return new InvocationTracker(mName, mTrace);
-        }
-
         public Storage storage() {
             if (mTrace) System.out.println("storage");
             mInvocationTracks |= sStorage;    // 0x4000
@@ -3153,32 +3148,6 @@ public class TestStorables extends TestCase {
 
         public void setPropertyValue(String name, Object value) {
             if (mTrace) System.out.println("setPropertyValue(" + name + ", " + value + ')');
-        }
-
-        public Repository getRootRepository() {
-            return null;
-        }
-
-        public Trigger getInsertTrigger() {
-            return null;
-        }
-
-        public Trigger getUpdateTrigger() {
-            return null;
-        }
-
-        public Trigger getDeleteTrigger() {
-            return null;
-        }
-
-        public Trigger getLoadTrigger() {
-            return null;
-        }
-
-        public void locallyDisableLoadTrigger() {
-        }
-
-        public void locallyEnableLoadTrigger() {
         }
     }
 
