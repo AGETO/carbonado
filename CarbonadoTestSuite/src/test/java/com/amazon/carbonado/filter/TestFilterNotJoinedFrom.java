@@ -23,7 +23,6 @@ import junit.framework.TestSuite;
 
 import com.amazon.carbonado.stored.Address;
 import com.amazon.carbonado.stored.Order;
-import com.amazon.carbonado.stored.OrderItem;
 import com.amazon.carbonado.stored.Shipment;
 
 /**
@@ -48,11 +47,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         Filter<Shipment> filter = Filter.getOpenFilter(Shipment.class);
 
         Filter<Shipment>.NotJoined nj = filter.notJoinedFrom("order");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
     }
 
@@ -60,11 +59,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         Filter<Shipment> filter = Filter.getClosedFilter(Shipment.class);
 
         Filter<Shipment>.NotJoined nj = filter.notJoinedFrom("order");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
     }
 
@@ -73,11 +72,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         filter = filter.bind();
 
         Filter<Shipment>.NotJoined nj = filter.notJoinedFrom("order");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor(Shipment.class, "order.orderTotal < ?");
@@ -89,7 +88,7 @@ public class TestFilterNotJoinedFrom extends TestCase {
         assertEquals(Filter.getOpenFilter(Shipment.class), nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor(Shipment.class, "order.address.addressCity = ?");
@@ -118,11 +117,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         filter = filter.bind();
 
         Filter<Shipment>.NotJoined nj = filter.notJoinedFrom("order");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor
@@ -137,7 +136,7 @@ public class TestFilterNotJoinedFrom extends TestCase {
                      nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor
@@ -167,11 +166,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         filter = filter.bind();
 
         Filter<Shipment>.NotJoined nj = filter.notJoinedFrom("order");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor
@@ -190,11 +189,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         filter = filter.bind();
 
         nj = filter.notJoinedFrom("order");
-        assertEquals(null, nj.getNotJoinedFilter());
+        assertEquals(Filter.getOpenFilter(Order.class), nj.getNotJoinedFilter());
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertTrue(nj.getNotJoinedFilter() == null);
+        assertTrue(nj.getNotJoinedFilter() instanceof OpenFilter);
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = Filter.filterFor
@@ -220,11 +219,11 @@ public class TestFilterNotJoinedFrom extends TestCase {
         filter = filter.bind();
 
         nj = filter.notJoinedFrom("order");
-        assertEquals(null, nj.getNotJoinedFilter());
+        assertEquals(Filter.getOpenFilter(Order.class), nj.getNotJoinedFilter());
         assertEquals(filter, nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertEquals(null, nj.getNotJoinedFilter());
+        assertEquals(Filter.getOpenFilter(Address.class), nj.getNotJoinedFilter());
         assertEquals(filter, nj.getRemainderFilter());
     }
 
@@ -243,7 +242,7 @@ public class TestFilterNotJoinedFrom extends TestCase {
         assertEquals(Filter.getOpenFilter(Shipment.class), nj.getRemainderFilter());
 
         nj = filter.notJoinedFrom("order.address");
-        assertEquals(null, nj.getNotJoinedFilter());
+        assertEquals(Filter.getOpenFilter(Address.class), nj.getNotJoinedFilter());
         assertEquals(filter, nj.getRemainderFilter());
 
         filter = filter.and("order.address.customData > ?");
@@ -268,20 +267,5 @@ public class TestFilterNotJoinedFrom extends TestCase {
                       "order.address.addressCity = ? & order.address.addressZip = ? " +
                       "| order.orderTotal != ?").bind(),
                      nj.getRemainderFilter());
-    }
-
-    public void testOneToMany() {
-        Filter<Order> filter = Filter.filterFor
-            (Order.class, "orderItems.itemPrice = ? & addressID = ?");
-
-        Filter<Order>.NotJoined nj = filter.notJoinedFrom("orderItems");
-
-        assertEquals(Filter.filterFor(OrderItem.class, "itemPrice = ?").bind(),
-                     nj.getNotJoinedFilter());
-        assertEquals(Filter.filterFor(Order.class, "addressID = ?").bind(),
-                     nj.getRemainderFilter());
-
-        assertEquals(Filter.filterFor(Order.class, "orderItems.itemPrice = ?").bind(),
-                     nj.getNotJoinedFilter().asJoinedFrom(Order.class, "orderItems"));
     }
 }

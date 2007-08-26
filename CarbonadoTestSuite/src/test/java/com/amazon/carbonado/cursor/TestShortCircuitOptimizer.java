@@ -159,6 +159,7 @@ public class TestShortCircuitOptimizer extends TestCase {
         }
     }
 
+    /*
     public void testOneToManyJoins() throws Exception {
         {
             Filter<Order> filter = Filter
@@ -214,4 +215,5 @@ public class TestShortCircuitOptimizer extends TestCase {
             assertEquals(filter, optimized);
         }
     }
+    */
 }
