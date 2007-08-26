@@ -1867,6 +1867,34 @@ public class TestStorables extends TestCase {
 
         assertTrue(storage.removeTrigger(it));
 
+
+        class LoadTrigger extends Trigger<StorableVersioned> {
+            boolean mCalled;
+
+            @Override
+            public void afterLoad(StorableVersioned s) {
+                assertEquals(1, s.getID());
+                mCalled = true;
+            }
+        };
+
+        LoadTrigger lt = new LoadTrigger();
+
+        assertTrue(storage.addTrigger(lt));
+
+        s.load();
+
+        assertTrue(lt.mCalled);
+
+        // Reset for query.
+        lt.mCalled = false;
+        storage.query("value = ?").with("value").fetch().toList();
+
+        assertTrue(lt.mCalled);
+
+        assertTrue(storage.removeTrigger(lt));
+
+
         class UpdateTrigger extends Trigger<StorableVersioned> {
             Object mState;
             int mVersion;
@@ -1897,6 +1925,7 @@ public class TestStorables extends TestCase {
         assertTrue(ut.mState != null);
 
         assertTrue(storage.removeTrigger(ut));
+
 
         class DeleteTrigger extends Trigger<StorableVersioned> {
             Object mState;
@@ -2079,6 +2108,38 @@ public class TestStorables extends TestCase {
         st.update();
 
         assertTrue(st.getModifyDateTime().getMillis() >= dt.getMillis() + 450);
+    }
+
+    public void test_triggerLoadByAltKey() throws Exception {
+        Storage<StorableTestBasicCompoundIndexed> storage =
+            getRepository().storageFor(StorableTestBasicCompoundIndexed.class);
+
+        class LoadTrigger extends Trigger<StorableTestBasicCompoundIndexed> {
+            int mCallCount;
+            StorableTestBasicCompoundIndexed mStorable;
+
+            @Override
+            public void afterLoad(StorableTestBasicCompoundIndexed s) {
+                mCallCount++;
+                mStorable = s;
+            }
+        };
+
+        LoadTrigger lt = new LoadTrigger();
+
+        assertTrue(storage.addTrigger(lt));
+
+        StorableTestBasicCompoundIndexed s = storage.prepare();
+        s.initPropertiesRandomly(1234);
+        s.insert();
+
+        StorableTestBasicCompoundIndexed s2 = storage.prepare();
+        s2.setStringProp(s.getStringProp());
+        s2.setDoubleProp(s.getDoubleProp());
+        s2.load();
+
+        assertEquals(1, lt.mCallCount);
+        assertTrue(s2 == lt.mStorable);
     }
 
     public void test_hashCode() throws Exception {
@@ -3108,6 +3169,16 @@ public class TestStorables extends TestCase {
 
         public Trigger getDeleteTrigger() {
             return null;
+        }
+
+        public Trigger getLoadTrigger() {
+            return null;
+        }
+
+        public void locallyDisableLoadTrigger() {
+        }
+
+        public void locallyEnableLoadTrigger() {
         }
     }
 

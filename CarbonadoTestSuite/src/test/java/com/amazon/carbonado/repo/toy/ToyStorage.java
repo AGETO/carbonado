@@ -236,6 +236,16 @@ public class ToyStorage<S extends Storable>
         return null;
     }
 
+    public Trigger<? super S> getLoadTrigger() {
+        return null;
+    }
+
+    public void locallyDisableLoadTrigger() {
+    }
+
+    public void locallyEnableLoadTrigger() {
+    }
+
     public SequenceValueProducer getSequenceValueProducer(String name) throws PersistException {
         try {
             return mRepo.getSequenceValueProducer(name);
