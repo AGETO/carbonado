@@ -71,6 +71,11 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
         return builder.build();
     }
 
+    @Override
+    public void test_sequenceRollback() throws Exception {
+        // This test makes no sense with replication so override with nothing.
+    }
+
     public void testAuthoritative() throws Exception {
         // Make sure authoritative storable is not replicated.
 
