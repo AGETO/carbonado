@@ -718,9 +718,9 @@ public class TestStorables extends TestCase {
         assertEquals(2, s.getVersion());
         assertEquals("world", s.getValue());
 
-        // Since no properties changed, update does not increase version.
+        // Even if no properties changed, update increases version.
         assertEquals(true, s.tryUpdate());
-        assertEquals(2, s.getVersion());
+        assertEquals(3, s.getVersion());
 
         // Simple test to ensure that version property doesn't need to be
         // dirtied.
@@ -770,9 +770,9 @@ public class TestStorables extends TestCase {
         assertEquals(2, s.getVersion());
         assertEquals("world", s.getValue());
 
-        // Since no properties changed, update does not increase version.
+        // Even if no properties changed, update increases version.
         assertEquals(true, s.tryUpdate());
-        assertEquals(2, s.getVersion());
+        assertEquals(3, s.getVersion());
     }
 
     public void test_versioningWithObj() throws Exception {
@@ -822,9 +822,9 @@ public class TestStorables extends TestCase {
         assertEquals((Integer) 2, s.getVersion());
         assertEquals("value", s.getValue());
 
-        // Since no properties changed, update does not increase version.
+        // Even if no properties changed, update increases version.
         assertEquals(true, s.tryUpdate());
-        assertEquals((Integer) 2, s.getVersion());
+        assertEquals((Integer) 3, s.getVersion());
     }
 
     public void test_versioningWithLongObj() throws Exception {
@@ -874,9 +874,9 @@ public class TestStorables extends TestCase {
         assertEquals((Long) 2L, s.getVersion());
         assertEquals("value", s.getValue());
 
-        // Since no properties changed, update does not increase version.
+        // Even if no properties changed, update increases version.
         assertEquals(true, s.tryUpdate());
-        assertEquals((Long) 2L, s.getVersion());
+        assertEquals((Long) 3L, s.getVersion());
     }
 
     public void test_initialVersion() throws Exception {
