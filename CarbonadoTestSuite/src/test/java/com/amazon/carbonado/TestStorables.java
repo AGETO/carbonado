@@ -2141,6 +2141,50 @@ public class TestStorables extends TestCase {
         assertTrue(s2 == lt.mStorable);
     }
 
+    public void test_triggerUpdateNoLoad() throws Exception {
+        // Verify that calling update does not call load trigger. This test is
+        // needed because master storable generator does an intermediate load
+        // in order to support "update full" mode.
+
+        Storage<StorableVersioned> storage = getRepository().storageFor(StorableVersioned.class);
+
+        class TheTrigger extends Trigger<StorableVersioned> {
+            int mUpdateCount;
+            int mLoadCount;
+
+            @Override
+            public Object beforeUpdate(StorableVersioned s) {
+                mUpdateCount++;
+                return null;
+            }
+
+            @Override
+            public void afterLoad(StorableVersioned s) {
+                mLoadCount++;
+            }
+        };
+
+        TheTrigger the = new TheTrigger();
+
+        assertTrue(storage.addTrigger(the));
+
+        StorableVersioned s = storage.prepare();
+        s.setID(1);
+        s.setValue("value");
+        s.insert();
+
+        s.setValue("foo");
+        s.update();
+
+        assertEquals(1, the.mUpdateCount);
+        assertEquals(0, the.mLoadCount);
+
+        s.load();
+
+        assertEquals(1, the.mUpdateCount);
+        assertEquals(1, the.mLoadCount);
+    }
+
     public void test_hashCode() throws Exception {
         Storage<StorableTestBasic> storage =
             getRepository().storageFor(StorableTestBasic.class);
