@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.joda.time.DateTime;
+
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
@@ -29,6 +31,7 @@ import com.amazon.carbonado.*;
 import com.amazon.carbonado.filter.*;
 
 import com.amazon.carbonado.repo.toy.ToyRepository;
+import com.amazon.carbonado.stored.*;
 
 /**
  * 
@@ -384,6 +387,350 @@ public class TestFilteredCursor extends TestCase {
         }
 
         assertEquals(expected.length, actualCount);
+    }
+
+    public void testExistsNoParams() throws Exception {
+        Repository repo = new ToyRepository();
+        Storage<Order> orders = repo.storageFor(Order.class);
+        Storage<OrderItem> items = repo.storageFor(OrderItem.class);
+        Storage<Shipment> shipments = repo.storageFor(Shipment.class);
+
+        Order order = orders.prepare();
+        order.setOrderID(1);
+        order.setOrderNumber("one");
+        order.setOrderTotal(100);
+        order.setAddressID(0);
+        order.insert();
+
+        // Query for orders with any items.
+        long count = orders.query("orderItems()").count();
+        assertEquals(0, count);
+
+        // Query for orders with no items.
+        List<Order> matches = orders.query("!orderItems()").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(order, matches.get(0));
+
+        // Query for orders with any shipments with any items.
+        matches = orders.query("shipments(orderItems())").fetch().toList();
+        assertEquals(0, matches.size());
+
+        // Query for orders with no shipments with any items.
+        matches = orders.query("!shipments(orderItems())").fetch().toList();
+        assertEquals(1, matches.size());
+
+        // Query for orders with any shipments with no items.
+        matches = orders.query("shipments(!orderItems())").fetch().toList();
+        assertEquals(0, matches.size());
+
+        // Query for orders with no shipments with no items.
+        matches = orders.query("!shipments(!orderItems())").fetch().toList();
+        assertEquals(1, matches.size());
+
+        // Insert more records (orders with items) and re-issue queries.
+
+        order = orders.prepare();
+        order.setOrderID(2);
+        order.setOrderNumber("two");
+        order.setOrderTotal(200);
+        order.setAddressID(0);
+        order.insert();
+
+        OrderItem item = items.prepare();
+        item.setOrderItemID(1);
+        item.setOrderID(2);
+        item.setItemDescription("desc one");
+        item.setItemQuantity(1);
+        item.setItemPrice(100);
+        item.setShipmentID(0);
+        item.insert();
+
+        // Query for orders with any items.
+        matches = orders.query("orderItems()").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(2, matches.get(0).getOrderID());
+
+        // Query for orders with no items.
+        matches = orders.query("!orderItems()").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+
+        // Query for orders with any shipments with any items.
+        matches = orders.query("shipments(orderItems())").fetch().toList();
+        assertEquals(0, matches.size());
+
+        // Query for orders with no shipments with any items.
+        matches = orders.query("!shipments(orderItems())").fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(2, matches.get(1).getOrderID());
+
+        // Query for orders with any shipments with no items.
+        matches = orders.query("shipments(!orderItems())").fetch().toList();
+        assertEquals(0, matches.size());
+
+        // Query for orders with no shipments with no items.
+        matches = orders.query("!shipments(!orderItems())").fetch().toList();
+        assertEquals(2, matches.size());
+
+        // Insert more records (orders with shipments with items) and re-issue queries.
+
+        order = orders.prepare();
+        order.setOrderID(3);
+        order.setOrderNumber("three");
+        order.setOrderTotal(300);
+        order.setAddressID(0);
+        order.insert();
+
+        Shipment shipment = shipments.prepare();
+        shipment.setShipmentID(1);
+        shipment.setShipmentNotes("notes");
+        shipment.setShipmentDate(new DateTime());
+        shipment.setOrderID(3);
+        shipment.setShipperID(0);
+        shipment.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(2);
+        item.setOrderID(3);
+        item.setItemDescription("desc two");
+        item.setItemQuantity(1);
+        item.setItemPrice(500);
+        item.setShipmentID(1);
+        item.insert();
+
+        // Query for orders with any items.
+        matches = orders.query("orderItems()").fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(2, matches.get(0).getOrderID());
+        assertEquals(3, matches.get(1).getOrderID());
+
+        // Query for orders with no items.
+        matches = orders.query("!orderItems()").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+
+        // Query for orders with any shipments with any items.
+        matches = orders.query("shipments(orderItems())").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(3, matches.get(0).getOrderID());
+
+        // Query for orders with no shipments with any items.
+        matches = orders.query("!shipments(orderItems())").fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(2, matches.get(1).getOrderID());
+
+        // Query for orders with any shipments with no items.
+        matches = orders.query("shipments(!orderItems())").fetch().toList();
+        assertEquals(0, matches.size());
+
+        // Query for orders with no shipments with no items.
+        matches = orders.query("!shipments(!orderItems())").fetch().toList();
+        assertEquals(3, matches.size());
+
+        // Insert more records to test for empty shipments.
+
+        order = orders.prepare();
+        order.setOrderID(4);
+        order.setOrderNumber("four");
+        order.setOrderTotal(400);
+        order.setAddressID(0);
+        order.insert();
+
+        shipment = shipments.prepare();
+        shipment.setShipmentID(2);
+        shipment.setShipmentNotes("notes 2");
+        shipment.setShipmentDate(new DateTime());
+        shipment.setOrderID(4);
+        shipment.setShipperID(0);
+        shipment.insert();
+
+        // Query for orders with any shipments with no items.
+        matches = orders.query("shipments(!orderItems())").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(4, matches.get(0).getOrderID());
+
+        // Query for orders with no shipments with no items.
+        matches = orders.query("!shipments(!orderItems())").fetch().toList();
+        assertEquals(3, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(2, matches.get(1).getOrderID());
+        assertEquals(3, matches.get(2).getOrderID());
+    }
+
+    public void testExistsWithParams() throws Exception {
+        Repository repo = new ToyRepository();
+        Storage<Order> orders = repo.storageFor(Order.class);
+        Storage<OrderItem> items = repo.storageFor(OrderItem.class);
+        Storage<Shipment> shipments = repo.storageFor(Shipment.class);
+
+        Order order = orders.prepare();
+        order.setOrderID(1);
+        order.setOrderNumber("one");
+        order.setOrderTotal(100);
+        order.setAddressID(0);
+        order.insert();
+
+        Shipment shipment = shipments.prepare();
+        shipment.setShipmentID(1);
+        shipment.setShipmentNotes("notes 1");
+        shipment.setShipmentDate(new DateTime());
+        shipment.setOrderID(1);
+        shipment.setShipperID(0);
+        shipment.insert();
+
+        shipment = shipments.prepare();
+        shipment.setShipmentID(2);
+        shipment.setShipmentNotes("notes 2");
+        shipment.setShipmentDate(new DateTime());
+        shipment.setOrderID(1);
+        shipment.setShipperID(0);
+        shipment.insert();
+
+        OrderItem item = items.prepare();
+        item.setOrderItemID(1);
+        item.setOrderID(1);
+        item.setItemDescription("one one");
+        item.setItemQuantity(1);
+        item.setItemPrice(500);
+        item.setShipmentID(1);
+        item.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(2);
+        item.setOrderID(1);
+        item.setItemDescription("one two");
+        item.setItemQuantity(1);
+        item.setItemPrice(500);
+        item.setShipmentID(1);
+        item.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(3);
+        item.setOrderID(1);
+        item.setItemDescription("one three");
+        item.setItemQuantity(2);
+        item.setItemPrice(500);
+        item.setShipmentID(2);
+        item.insert();
+
+        order = orders.prepare();
+        order.setOrderID(2);
+        order.setOrderNumber("two");
+        order.setOrderTotal(20000);
+        order.setAddressID(0);
+        order.insert();
+
+        order = orders.prepare();
+        order.setOrderID(3);
+        order.setOrderNumber("three");
+        order.setOrderTotal(300);
+        order.setAddressID(0);
+        order.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(4);
+        item.setOrderID(3);
+        item.setItemDescription("three one");
+        item.setItemQuantity(20);
+        item.setItemPrice(500);
+        item.setShipmentID(2);
+        item.insert();
+
+        order = orders.prepare();
+        order.setOrderID(4);
+        order.setOrderNumber("four");
+        order.setOrderTotal(0);
+        order.setAddressID(0);
+        order.insert();
+
+        shipment = shipments.prepare();
+        shipment.setShipmentID(3);
+        shipment.setShipmentNotes("notes 3");
+        shipment.setShipmentDate(new DateTime());
+        shipment.setOrderID(4);
+        shipment.setShipperID(0);
+        shipment.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(5);
+        item.setOrderID(4);
+        item.setItemDescription("four one");
+        item.setItemQuantity(99);
+        item.setItemPrice(500);
+        item.setShipmentID(3);
+        item.insert();
+
+        // Query for orders which has an item with a specific quantity.
+
+        List<Order> matches = orders.query("orderItems(itemQuantity >= ? & itemQuantity < ?)")
+            .with(2).with(10).fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+
+        matches = orders.query("orderItems(itemQuantity >= ? & itemQuantity < ?)")
+            .with(2).with(50).fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(3, matches.get(1).getOrderID());
+
+        // Query for empty orders with a non-zero total.
+
+        matches = orders.query("orderTotal != ? & !orderItems()")
+            .with(0).fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(2, matches.get(0).getOrderID());
+            
+        matches = orders.query("!orderItems() & orderTotal != ?")
+            .with(0).fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(2, matches.get(0).getOrderID());
+
+        // Query for non-empty orders or those with a zero total.
+
+        matches = orders.query("!(!orderItems() & orderTotal != ?)")
+            .with(0).fetch().toList();
+        assertEquals(3, matches.size());
+        for (int i=0; i<matches.size(); i++) {
+            assertTrue(matches.get(i).getOrderID() != 2);
+        }
+
+        // Query for orders in shipments which have an item with a high quantity.
+
+        matches = orders.query("shipments(orderItems(itemQuantity > ?))")
+            .with(10).fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(4, matches.get(1).getOrderID());
+
+        // Query with a specific quantity.
+
+        matches = orders.query("shipments(orderItems(itemQuantity = ?))")
+            .with(99).fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(4, matches.get(0).getOrderID());
+
+        // Mix in some more stuff...
+
+        matches = orders
+            .query("orderNumber = ? | shipments(orderItems(itemQuantity = ?) | shipmentNotes = ?)")
+            .with("three").with(99).with("notes 1").fetch().toList();
+        assertEquals(3, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(3, matches.get(1).getOrderID());
+        assertEquals(4, matches.get(2).getOrderID());
+
+        matches = orders
+            .query("orderNumber = ? | " +
+                   "shipments(orderItems(itemQuantity = ?) | " +
+                              "shipmentNotes = ? | " +
+                              "orderItems(itemQuantity = ?))")
+            .with("three").with(99).with("notes 1").with(25).fetch().toList();
+        assertEquals(3, matches.size());
+        assertEquals(1, matches.get(0).getOrderID());
+        assertEquals(3, matches.get(1).getOrderID());
+        assertEquals(4, matches.get(2).getOrderID());
     }
 
     @PrimaryKey("ID")

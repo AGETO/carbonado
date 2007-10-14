@@ -159,11 +159,10 @@ public class TestShortCircuitOptimizer extends TestCase {
         }
     }
 
-    /*
     public void testOneToManyJoins() throws Exception {
         {
             Filter<Order> filter = Filter
-                .filterFor(Order.class, "orderNumber = ? & orderItems.itemPrice = ?");
+                .filterFor(Order.class, "orderNumber = ? & orderItems(itemPrice = ?)");
             Filter<Order> optimized = ShortCircuitOptimizer.optimize(filter);
 
             // No change.
@@ -172,48 +171,45 @@ public class TestShortCircuitOptimizer extends TestCase {
 
         {
             Filter<Order> filter = Filter
-                .filterFor(Order.class, "orderItems.itemPrice = ? & orderNumber = ?");
+                .filterFor(Order.class, "orderItems(itemPrice = ?) & orderNumber = ?");
             Filter<Order> optimized = ShortCircuitOptimizer.optimize(filter);
 
             assertEquals(Filter.filterFor
-                         (Order.class, "orderNumber = ? & orderItems.itemPrice = ?"),
+                         (Order.class, "orderNumber = ? & orderItems(itemPrice = ?)"),
                          optimized);
         }
 
         {
             Filter<Order> filter = Filter
                 .filterFor(Order.class,
-                           "(orderItems.itemPrice = ? & orderNumber = ?) | orderTotal < ?");
+                           "(orderItems(itemPrice = ?) & orderNumber = ?) | orderTotal < ?");
             Filter<Order> optimized = ShortCircuitOptimizer.optimize(filter);
 
             assertEquals(Filter.filterFor
                          (Order.class,
-                          "orderTotal < ? | (orderNumber = ? & orderItems.itemPrice = ?)"),
+                          "orderTotal < ? | (orderNumber = ? & orderItems(itemPrice = ?))"),
                          optimized);
         }
 
         {
             Filter<Order> filter = Filter
                 .filterFor(Order.class,
-                           "orderItems.shipment.shipmentDate > ? | shipments.shipmentDate < ?");
+                           "orderItems(shipment.shipmentDate > ?) | shipments(shipmentDate < ?)");
             Filter<Order> optimized = ShortCircuitOptimizer.optimize(filter);
 
-            assertEquals(Filter.filterFor
-                         (Order.class,
-                          "shipments.shipmentDate < ? | orderItems.shipment.shipmentDate > ?"),
-                         optimized);
+            // No change because optimizer doesn't consider complexity of sub-filters.
+            assertEquals(filter, optimized);
         }
 
         {
             Filter<Order> filter = Filter
                 .filterFor
                 (Order.class,
-                 "orderItems.shipment.shipmentDate > ? | shipments.shipper.shipperName != ?");
+                 "orderItems(shipment.shipmentDate > ?) | shipments(shipper.shipperName != ?)");
             Filter<Order> optimized = ShortCircuitOptimizer.optimize(filter);
 
             // No change.
             assertEquals(filter, optimized);
         }
     }
-    */
 }
