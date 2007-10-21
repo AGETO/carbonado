@@ -100,12 +100,6 @@ public class TestFilterExists extends TestCase {
 
     public void testParseErrors() {
         try {
-            Filter.filterFor(Order.class, "address()");
-            fail();
-        } catch (MalformedFilterException e) {
-        }
-
-        try {
             Filter.filterFor(Order.class, "shipments");
             fail();
         } catch (MalformedFilterException e) {
@@ -121,6 +115,62 @@ public class TestFilterExists extends TestCase {
             Filter.filterFor(Order.class, "shipments(orderTotal=?)");
             fail();
         } catch (MalformedFilterException e) {
+        }
+    }
+
+    public void testManyToOneParsing() {
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "address()");
+            assertTrue(f1 instanceof ExistsFilter);
+            assertEquals("address", ((ExistsFilter) f1).getChainedProperty().toString());
+            assertTrue(((ExistsFilter) f1).getSubFilter().isOpen());
+            assertFalse(((ExistsFilter) f1).isNotExists());
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "!address()");
+            assertTrue(f1 instanceof ExistsFilter);
+            assertEquals("address", ((ExistsFilter) f1).getChainedProperty().toString());
+            assertTrue(((ExistsFilter) f1).getSubFilter().isOpen());
+            assertTrue(((ExistsFilter) f1).isNotExists());
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "address(addressCity = ?)");
+            assertFalse(f1 instanceof ExistsFilter);
+            assertEquals(Filter.filterFor(Order.class, "address.addressCity = ?"), f1);
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "!address(addressCity = ?)");
+            assertFalse(f1 instanceof ExistsFilter);
+            assertEquals(Filter.filterFor(Order.class, "address.addressCity != ?"), f1);
+        }
+    }
+
+    public void testClosedSubFilter() {
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "orderTotal = ?");
+            f1 = f1.orExists("shipments", Filter.getClosedFilter(Shipment.class));
+            assertEquals(Filter.filterFor(Order.class, "orderTotal = ?"), f1);
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "orderTotal = ?");
+            f1 = f1.andExists("shipments", Filter.getClosedFilter(Shipment.class));
+            assertTrue(f1.isClosed());
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "orderTotal = ?");
+            f1 = f1.orNotExists("shipments", Filter.getClosedFilter(Shipment.class));
+            assertTrue(f1.isOpen());
+        }
+
+        {
+            Filter<Order> f1 = Filter.filterFor(Order.class, "orderTotal = ?");
+            f1 = f1.andNotExists("shipments", Filter.getClosedFilter(Shipment.class));
+            assertEquals(Filter.filterFor(Order.class, "orderTotal = ?"), f1);
         }
     }
 

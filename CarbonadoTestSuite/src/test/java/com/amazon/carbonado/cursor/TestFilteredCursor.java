@@ -559,6 +559,65 @@ public class TestFilteredCursor extends TestCase {
         assertEquals(3, matches.get(2).getOrderID());
     }
 
+    public void testExistsNoParamsManyToOne() throws Exception {
+        Repository repo = new ToyRepository();
+        Storage<Order> orders = repo.storageFor(Order.class);
+        Storage<OrderItem> items = repo.storageFor(OrderItem.class);
+
+        Order order = orders.prepare();
+        order.setOrderID(1);
+        order.setOrderNumber("one");
+        order.setOrderTotal(100);
+        order.setAddressID(0);
+        order.insert();
+
+        OrderItem item = items.prepare();
+        item.setOrderItemID(1);
+        item.setOrderID(1);
+        item.setItemDescription("desc one");
+        item.setItemQuantity(1);
+        item.setItemPrice(100);
+        item.setShipmentID(0);
+        item.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(2);
+        item.setOrderID(1);
+        item.setItemDescription("desc two");
+        item.setItemQuantity(2);
+        item.setItemPrice(5);
+        item.setShipmentID(0);
+        item.insert();
+
+        item = items.prepare();
+        item.setOrderItemID(3);
+        item.setOrderID(0);
+        item.setItemDescription("desc three");
+        item.setItemQuantity(1);
+        item.setItemPrice(5);
+        item.setShipmentID(0);
+        item.insert();
+
+        // Query for items contained in an order.
+        List<OrderItem> matches = items.query("order()").fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(1, matches.get(0).getOrderItemID());
+        assertEquals(2, matches.get(1).getOrderItemID());
+
+        // Query for items contained not in an order.
+        matches = items.query("!order()").fetch().toList();
+        assertEquals(1, matches.size());
+        assertEquals(3, matches.get(0).getOrderItemID());
+
+        // Outer join.
+        matches = items.query("itemPrice = ? & (order.orderTotal = ? | !order())")
+            .with(5).with(100)
+            .fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(2, matches.get(0).getOrderItemID());
+        assertEquals(3, matches.get(1).getOrderItemID());
+    }
+
     public void testExistsWithParams() throws Exception {
         Repository repo = new ToyRepository();
         Storage<Order> orders = repo.storageFor(Order.class);
