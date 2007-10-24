@@ -1,0 +1,9 @@
+CarbonadoPolepos
+
+This directory contains code which integrates with the PolePosition database
+benchmark. (http://polepos.sourceforge.net/)
+
+Carbonado is distributed with the Apache 2.0 license, but CarbonadoPolepos is
+distributed with the GNU license. This is due to PolePosition's use of the GNU
+license. CarbonadoPolepos is not distributed with any Carbonado code, avoiding
+any license conflict.
