@@ -144,7 +144,7 @@ public class TestFilterExists extends TestCase {
         {
             Filter<Order> f1 = Filter.filterFor(Order.class, "!address(addressCity = ?)");
             assertFalse(f1 instanceof ExistsFilter);
-            assertEquals(Filter.filterFor(Order.class, "address.addressCity != ?"), f1);
+            assertEquals(Filter.filterFor(Order.class, "(address).addressCity != ?"), f1);
         }
     }
 

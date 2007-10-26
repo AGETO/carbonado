@@ -616,6 +616,14 @@ public class TestFilteredCursor extends TestCase {
         assertEquals(2, matches.size());
         assertEquals(2, matches.get(0).getOrderItemID());
         assertEquals(3, matches.get(1).getOrderItemID());
+
+        // Outer join, done in the "correct" way.
+        matches = items.query("itemPrice = ? & (order).orderTotal = ?")
+            .with(5).with(100)
+            .fetch().toList();
+        assertEquals(2, matches.size());
+        assertEquals(2, matches.get(0).getOrderItemID());
+        assertEquals(3, matches.get(1).getOrderItemID());
     }
 
     public void testExistsWithParams() throws Exception {
