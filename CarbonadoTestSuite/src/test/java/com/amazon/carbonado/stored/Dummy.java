@@ -131,6 +131,10 @@ public class Dummy implements Storable {
         throw error();
     }
 
+    public java.util.Map<String, Object> propertyMap() {
+        throw error();
+    }
+
     public Storable copy() {
         throw error();
     }

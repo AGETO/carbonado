@@ -24,6 +24,7 @@ import java.io.Writer;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -3192,6 +3193,10 @@ public class TestStorables extends TestCase {
 
         public void setPropertyValue(String name, Object value) {
             if (mTrace) System.out.println("setPropertyValue(" + name + ", " + value + ')');
+        }
+
+        public Map<String, Object> propertyMap() {
+            throw new UnsupportedOperationException();
         }
     }
 
