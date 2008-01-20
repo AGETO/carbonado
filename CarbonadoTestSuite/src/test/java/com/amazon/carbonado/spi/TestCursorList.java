@@ -39,14 +39,14 @@ public class TestCursorList extends TestCase {
         return new TestSuite(TestCursorList.class);
     }
 
-    TransactionManager.CursorList mList;
+    TransactionScope.CursorList mList;
 
     public TestCursorList(String name) {
         super(name);
     }
 
     protected void setUp() {
-       mList = new TransactionManager.CursorList();
+       mList = new TransactionScope.CursorList();
     }
 
     public void testRegisterFew() {

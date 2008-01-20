@@ -28,7 +28,7 @@ import com.amazon.carbonado.FetchException;
 import com.amazon.carbonado.IsolationLevel;
 import com.amazon.carbonado.Storable;
 
-import com.amazon.carbonado.spi.TransactionManager;
+import com.amazon.carbonado.spi.TransactionScope;
 
 /**
  * Cursor for a primary database.
@@ -44,7 +44,7 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
     private Dbc mCursor;
 
     /**
-     * @param txnMgr
+     * @param scope
      * @param startBound specify the starting key for the cursor, or null if first
      * @param inclusiveStart true if start bound is inclusive
      * @param endBound specify the ending key for the cursor, or null if last
@@ -55,7 +55,7 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
      * @param database primary database to use
      * @throws IllegalArgumentException if any bound is null but is not inclusive
      */
-    DB_Legacy_Cursor(TransactionManager<DbTxn> txnMgr,
+    DB_Legacy_Cursor(TransactionScope<DbTxn> scope,
                      byte[] startBound, boolean inclusiveStart,
                      byte[] endBound, boolean inclusiveEnd,
                      int maxPrefix,
@@ -64,11 +64,11 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
                      Db database)
         throws DbException, FetchException
     {
-        super(txnMgr, startBound, inclusiveStart, endBound, inclusiveEnd,
+        super(scope, startBound, inclusiveStart, endBound, inclusiveEnd,
               maxPrefix, reverse, storage);
 
         mDatabase = database;
-        mLockMode = txnMgr.isForUpdate() ? Db.DB_RMW : 0;
+        mLockMode = scope.isForUpdate() ? Db.DB_RMW : 0;
 
         mSearchKey = DB_Legacy_DbtPool.createDbt();
         mData = DB_Legacy_DbtPool.createDbt();

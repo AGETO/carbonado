@@ -30,7 +30,7 @@ import com.sleepycat.db.DbTxn;
 import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.RepositoryException;
 
-import com.amazon.carbonado.spi.TransactionManager;
+import com.amazon.carbonado.spi.TransactionScope;
 
 /**
  * Storage implementation for DBRepository.
@@ -223,7 +223,7 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
     }
 
     protected BDBCursor<DbTxn, S> openCursor
-        (TransactionManager<DbTxn> txnMgr,
+        (TransactionScope<DbTxn> scope,
          byte[] startBound, boolean inclusiveStart,
          byte[] endBound, boolean inclusiveEnd,
          int maxPrefix,
@@ -232,7 +232,7 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
         throws Exception
     {
         return new DB_Legacy_Cursor<S>
-            (txnMgr,
+            (scope,
              startBound, inclusiveStart,
              endBound, inclusiveEnd,
              maxPrefix,
