@@ -18,6 +18,8 @@
 
 package com.amazon.carbonado.qe;
 
+import java.io.*;
+
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -221,5 +223,29 @@ public class TestOrderingList extends TestCase {
         assertEquals("+date", array[0]);
         assertEquals("+intProp", array[1]);
         assertEquals("+stringProp", array[2]);
+    }
+
+    public void testSerialization() throws Exception {
+        OrderingList<StorableTestBasic> list = OrderingList.emptyList();
+        assertTrue(list == writeAndRead(list));
+
+        list = OrderingList.get(StorableTestBasic.class,
+                                "+date", "-intProp", "~stringProp", "longProp", "+doubleProp");
+
+        assertTrue(list == writeAndRead(list));
+    }
+
+    private <J> J writeAndRead(J obj) throws Exception {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        ObjectOutputStream oout = new ObjectOutputStream(bout);
+        oout.writeObject(obj);
+        oout.close();
+
+        ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
+        ObjectInputStream oin = new ObjectInputStream(bin);
+        obj = (J) oin.readObject();
+        oin.close();
+
+        return obj;
     }
 }
