@@ -48,4 +48,10 @@ public class ToyTransaction implements Transaction {
     public IsolationLevel getIsolationLevel() {
         throw new UnsupportedOperationException();
     }
+
+    public void detach() {
+    }
+
+    public void attach() {
+    }
 }
