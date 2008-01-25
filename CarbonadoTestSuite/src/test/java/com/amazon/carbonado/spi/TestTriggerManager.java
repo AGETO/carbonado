@@ -70,26 +70,31 @@ public class TestTriggerManager extends TestCase {
         assertNull(set.getInsertTrigger());
         assertNull(set.getUpdateTrigger());
         assertNull(set.getDeleteTrigger());
+        assertNull(set.getLoadTrigger());
 
         assertTrue(set.addTrigger(trigger));
         assertNotNull(set.getInsertTrigger());
         assertNotNull(set.getUpdateTrigger());
         assertNotNull(set.getDeleteTrigger());
+        assertNotNull(set.getLoadTrigger());
 
         assertFalse(set.addTrigger(trigger));
         assertNotNull(set.getInsertTrigger());
         assertNotNull(set.getUpdateTrigger());
         assertNotNull(set.getDeleteTrigger());
+        assertNotNull(set.getLoadTrigger());
 
         assertTrue(set.removeTrigger(trigger));
         assertNull(set.getInsertTrigger());
         assertNull(set.getUpdateTrigger());
         assertNull(set.getDeleteTrigger());
+        assertNull(set.getLoadTrigger());
 
         assertFalse(set.removeTrigger(trigger));
         assertNull(set.getInsertTrigger());
         assertNull(set.getUpdateTrigger());
         assertNull(set.getDeleteTrigger());
+        assertNull(set.getLoadTrigger());
 
         Trigger<Dummy> trigger2 = new TestTrigger<Dummy>();
         assertTrue(set.addTrigger(trigger));
@@ -97,15 +102,18 @@ public class TestTriggerManager extends TestCase {
         assertNotNull(set.getInsertTrigger());
         assertNotNull(set.getUpdateTrigger());
         assertNotNull(set.getDeleteTrigger());
+        assertNotNull(set.getLoadTrigger());
 
         assertTrue(set.removeTrigger(trigger));
         assertNotNull(set.getInsertTrigger());
         assertNotNull(set.getUpdateTrigger());
         assertNotNull(set.getDeleteTrigger());
+        assertNotNull(set.getLoadTrigger());
         assertTrue(set.removeTrigger(trigger2));
         assertNull(set.getInsertTrigger());
         assertNull(set.getUpdateTrigger());
         assertNull(set.getDeleteTrigger());
+        assertNull(set.getLoadTrigger());
     }
 
     public void testBeforeAndAfterOps() throws Exception {
@@ -168,6 +176,9 @@ public class TestTriggerManager extends TestCase {
 
         set.getDeleteTrigger().failedDelete(d, state);
         assertEquals(1, trigger.failedDeleteCount);
+
+        set.getLoadTrigger().afterLoad(d);
+        assertEquals(1, trigger.afterLoadCount);
     }
 
     public void testExecutionOrder() throws Exception {
@@ -259,6 +270,8 @@ public class TestTriggerManager extends TestCase {
         int afterDeleteCount;
         int failedDeleteCount;
 
+        int afterLoadCount;
+
         TestTrigger() {
             this.stateObj = new Object();
         }
@@ -330,5 +343,10 @@ public class TestTriggerManager extends TestCase {
             failedDeleteCount++;
         }
 
+        @Override
+        public void afterLoad(S Storable) {
+            afterTriggers.add(this);
+            afterLoadCount++;
+        }
     }
 }
