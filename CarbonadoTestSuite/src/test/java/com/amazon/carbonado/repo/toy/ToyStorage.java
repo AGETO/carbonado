@@ -19,6 +19,7 @@
 package com.amazon.carbonado.repo.toy;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -39,7 +40,9 @@ import com.amazon.carbonado.Trigger;
 
 import com.amazon.carbonado.sequence.SequenceValueProducer;
 
-import com.amazon.carbonado.gen.MasterSupport;
+import com.amazon.carbonado.gen.DelegateStorableGenerator;
+import com.amazon.carbonado.gen.DelegateSupport;
+import com.amazon.carbonado.gen.MasterFeature;
 
 import com.amazon.carbonado.util.QuickConstructorGenerator;
 
@@ -63,7 +66,7 @@ import com.amazon.carbonado.qe.StandardQuery;
  * @author Brian S O'Neill
  */
 public class ToyStorage<S extends Storable>
-    implements Storage<S>, MasterSupport<S>, QueryFactory<S>, QueryExecutorFactory<S>
+    implements Storage<S>, DelegateSupport<S>, QueryFactory<S>, QueryExecutorFactory<S>
 {
     final ToyRepository mRepo;
     final Class<S> mType;
@@ -78,9 +81,14 @@ public class ToyStorage<S extends Storable>
         mRepo = repo;
         mType = type;
 
-        Class<? extends S> generatedStorableClass = ToyStorableGenerator.getGeneratedClass(type);
+        EnumSet<MasterFeature> features = EnumSet
+            .of(MasterFeature.VERSIONING, MasterFeature.INSERT_SEQUENCES);
+
+        Class<? extends S> delegateStorableClass =
+            DelegateStorableGenerator.getDelegateClass(type, features);
+
         mInstanceFactory = QuickConstructorGenerator
-            .getInstance(generatedStorableClass, InstanceFactory.class);
+            .getInstance(delegateStorableClass, InstanceFactory.class);
 
         mData = new LinkedList<S>();
         mDataLock = new ReentrantLock();
@@ -255,7 +263,7 @@ public class ToyStorage<S extends Storable>
     }
 
     public static interface InstanceFactory {
-        Storable instantiate(ToyStorage storage);
+        Storable instantiate(DelegateSupport support);
     }
 
     private class ToyQuery extends StandardQuery<S> {
