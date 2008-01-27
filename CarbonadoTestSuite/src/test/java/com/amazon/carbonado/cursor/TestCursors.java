@@ -92,81 +92,81 @@ public class TestCursors extends TestCase {
         assertFalse(cursor.hasNext());
     }
 
-    public void testView() throws Exception {
-        Cursor<Element> view;
+    public void testSlice() throws Exception {
+        Cursor<Element> range;
 
         // Empty source.
-        view = new ViewCursor<Element>(createElements(), 10, 100);
-        compareElements(view);
-        view = new ViewCursor<Element>(createElements(), 10, 10);
-        compareElements(view);
+        range = SliceCursor.slice(createElements(), 10, 100);
+        compareElements(range);
+        range = SliceCursor.slice(createElements(), 10, 10);
+        compareElements(range);
 
         // start at zero
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 0, 100);
-        compareElements(view, 1, 2, 3, 4, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 0, 5);
-        compareElements(view, 1, 2, 3, 4, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 0, 4);
-        compareElements(view, 1, 2, 3, 4);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 0, 1);
-        compareElements(view, 1);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 0, 0);
-        compareElements(view);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 100);
+        compareElements(range, 1, 2, 3, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 5);
+        compareElements(range, 1, 2, 3, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 4);
+        compareElements(range, 1, 2, 3, 4);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 1);
+        compareElements(range, 1);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 0);
+        compareElements(range);
 
         // start after zero
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 1, 100);
-        compareElements(view, 2, 3, 4, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 1, 5);
-        compareElements(view, 2, 3, 4, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 1, 4);
-        compareElements(view, 2, 3, 4);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 1, 2);
-        compareElements(view, 2);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 1, 1);
-        compareElements(view);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 100);
+        compareElements(range, 2, 3, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 5);
+        compareElements(range, 2, 3, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 4);
+        compareElements(range, 2, 3, 4);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 2);
+        compareElements(range, 2);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 1);
+        compareElements(range);
 
         // start too high
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 5, 100);
-        compareElements(view);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 50, 100);
-        compareElements(view);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 100);
+        compareElements(range);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 50, 100);
+        compareElements(range);
 
         // start in middle but end high
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        compareElements(view, 3, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        compareElements(range, 3, 4, 5);
 
         // start after zero and skip
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(1, view.skipNext(1));
-        compareElements(view, 4, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 4);
-        assertEquals(1, view.skipNext(1));
-        compareElements(view, 4);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(2, view.skipNext(2));
-        compareElements(view, 5);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(3, view.skipNext(3));
-        compareElements(view);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(3, view.skipNext(4));
-        compareElements(view);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        assertEquals(1, range.skipNext(1));
+        compareElements(range, 4, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 4);
+        assertEquals(1, range.skipNext(1));
+        compareElements(range, 4);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        assertEquals(2, range.skipNext(2));
+        compareElements(range, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        assertEquals(3, range.skipNext(3));
+        compareElements(range);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        assertEquals(3, range.skipNext(4));
+        compareElements(range);
 
         // start in middle, end high, and skip
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(2, view.skipNext(2));
-        compareElements(view, 5);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
+        assertEquals(2, range.skipNext(2));
+        compareElements(range, 5);
 
         // start too high and skip
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 5, 100);
-        assertEquals(0, view.skipNext(1));
-        compareElements(view);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 5, 5);
-        assertEquals(0, view.skipNext(1));
-        compareElements(view);
-        view = new ViewCursor<Element>(createElements(1, 2, 3, 4, 5), 500, 600);
-        assertEquals(0, view.skipNext(1));
-        compareElements(view);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 100);
+        assertEquals(0, range.skipNext(1));
+        compareElements(range);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 5);
+        assertEquals(0, range.skipNext(1));
+        compareElements(range);
+        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 500, 600);
+        assertEquals(0, range.skipNext(1));
+        compareElements(range);
     }
 
     public void testUnion() throws Exception {
