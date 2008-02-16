@@ -30,7 +30,7 @@ import com.amazon.carbonado.repo.toy.ToyRepository;
 import com.amazon.carbonado.stored.*;
 
 /**
- * Test case for {@link StorableSerializer}.
+ * Test case for Storable serialization.
  *
  * @author Brian S O'Neill
  */
@@ -67,13 +67,10 @@ public class TestStorableSerializer extends TestCase {
         stb.setLongProp(999);
         stb.setDoubleProp(2.718281828d);
 
-        StorableSerializer<StorableTestBasic> serializer = 
-            StorableSerializer.forType(StorableTestBasic.class);
-
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(bout);
 
-        serializer.write(stb, (DataOutput) dout);
+        stb.writeTo(dout);
         dout.flush();
 
         byte[] bytes = bout.toByteArray();
@@ -81,7 +78,8 @@ public class TestStorableSerializer extends TestCase {
         ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
         DataInputStream din = new DataInputStream(bin);
 
-        StorableTestBasic stb2 = serializer.read(storage, (DataInput) din);
+        StorableTestBasic stb2 = storage.prepare();
+        stb2.readFrom(din);
 
         assertEquals(stb, stb2);
     }
