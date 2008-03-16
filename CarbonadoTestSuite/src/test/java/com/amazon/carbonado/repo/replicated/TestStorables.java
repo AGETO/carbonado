@@ -105,16 +105,16 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
     public void testBlobReplication() throws Exception {
         Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
 
-        Storage<StorableWithLobs> replica = ((ReplicatedRepository) getRepository())
+        Storage<StorableWithLobs> replicaStorage = ((ReplicatedRepository) getRepository())
             .getReplicaRepository().storageFor(StorableWithLobs.class);
-        Storage<StorableWithLobs> master = ((ReplicatedRepository) getRepository())
+        Storage<StorableWithLobs> masterStorage = ((ReplicatedRepository) getRepository())
             .getMasterRepository().storageFor(StorableWithLobs.class);
 
         StorableWithLobs lobs = storage.prepare();
         lobs.setBlobValue(new ByteArrayBlob("hello".getBytes()));
         lobs.insert();
 
-        StorableWithLobs maLobs = master.prepare();
+        StorableWithLobs maLobs = masterStorage.prepare();
         maLobs.setId(lobs.getId());
         maLobs.load();
         assertEquals("hello", maLobs.getBlobValue().asString());
@@ -137,21 +137,44 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
 
         assertEquals("world!", blob.asString());
         assertEquals("world!", maLobs.getBlobValue().asString());
+
+        // Do again after a fresh load
+        lobs.load();
+        blob = lobs.getBlobValue();
+
+        assertEquals("world!", blob.asString());
+        assertEquals("world!", maLobs.getBlobValue().asString());
+
+        out = blob.openOutputStream();
+        out.write("the quick brown fox".getBytes());
+        out.close();
+        
+        assertEquals("the quick brown fox", blob.asString());
+        assertEquals("the quick brown fox", maLobs.getBlobValue().asString());
+
+        // Test length change.
+        blob.setLength(3);
+
+        assertEquals(3, blob.getLength());
+        assertEquals(3, maLobs.getBlobValue().getLength());
+
+        assertEquals("the", blob.asString());
+        assertEquals("the", maLobs.getBlobValue().asString());
     }
 
     public void testClobReplication() throws Exception {
         Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
 
-        Storage<StorableWithLobs> replica = ((ReplicatedRepository) getRepository())
+        Storage<StorableWithLobs> replicaStorage = ((ReplicatedRepository) getRepository())
             .getReplicaRepository().storageFor(StorableWithLobs.class);
-        Storage<StorableWithLobs> master = ((ReplicatedRepository) getRepository())
+        Storage<StorableWithLobs> masterStorage = ((ReplicatedRepository) getRepository())
             .getMasterRepository().storageFor(StorableWithLobs.class);
 
         StorableWithLobs lobs = storage.prepare();
         lobs.setClobValue(new StringClob("hello"));
         lobs.insert();
 
-        StorableWithLobs maLobs = master.prepare();
+        StorableWithLobs maLobs = masterStorage.prepare();
         maLobs.setId(lobs.getId());
         maLobs.load();
         assertEquals("hello", maLobs.getClobValue().asString());
@@ -174,5 +197,28 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
 
         assertEquals("world!", clob.asString());
         assertEquals("world!", maLobs.getClobValue().asString());
+
+        // Do again after a fresh load
+        lobs.load();
+        clob = lobs.getClobValue();
+
+        assertEquals("world!", clob.asString());
+        assertEquals("world!", maLobs.getClobValue().asString());
+
+        out = clob.openWriter();
+        out.write("the quick brown fox");
+        out.close();
+        
+        assertEquals("the quick brown fox", clob.asString());
+        assertEquals("the quick brown fox", maLobs.getClobValue().asString());
+
+        // Test length change.
+        clob.setLength(3);
+
+        assertEquals(3, clob.getLength());
+        assertEquals(3, maLobs.getClobValue().getLength());
+
+        assertEquals("the", clob.asString());
+        assertEquals("the", maLobs.getClobValue().asString());
     }
 }
