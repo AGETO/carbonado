@@ -139,6 +139,14 @@ public class Dummy implements Storable {
         throw error();
     }
 
+    public void writeTo(java.io.OutputStream out) {
+        throw error(); 
+    }
+
+    public void readFrom(java.io.InputStream in) {
+        throw error();
+    }
+
     public boolean equalPrimaryKeys(Object obj) {
         throw error();
     }

@@ -3198,6 +3198,14 @@ public class TestStorables extends TestCase {
         public Map<String, Object> propertyMap() {
             throw new UnsupportedOperationException();
         }
+
+        public void writeTo(OutputStream out) {
+            throw new UnsupportedOperationException();
+        }
+
+        public void readFrom(InputStream in) {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }
