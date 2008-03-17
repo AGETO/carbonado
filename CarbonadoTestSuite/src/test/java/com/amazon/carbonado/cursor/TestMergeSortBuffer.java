@@ -29,6 +29,7 @@ import org.cojen.util.BeanComparator;
 
 import com.amazon.carbonado.*;
 import com.amazon.carbonado.stored.*;
+import com.amazon.carbonado.lob.ByteArrayBlob;
 
 /**
  * Test case for {@link MergeSortBuffer}.
@@ -118,6 +119,36 @@ public class TestMergeSortBuffer extends TestCase {
 
     public void testHuge() throws Exception {
         testBuffer(HUGE_BUFFER_SIZE);
+    }
+
+    public void testLobs() throws Exception {
+        Comparator<StorableWithLobs> c = BeanComparator.forClass(StorableWithLobs.class)
+            .orderBy("-id");
+
+        Storage<StorableWithLobs> storage = mRepository.storageFor(StorableWithLobs.class);
+        SortBuffer<StorableWithLobs> buffer =
+            new MergeSortBuffer<StorableWithLobs>(storage, null, 100);
+        buffer.prepare(c);
+
+        for (int i=0; i<5000; i++) {
+            StorableWithLobs s = storage.prepare();
+            s.setBlobValue(new ByteArrayBlob(("hello " + i).getBytes()));
+            s.insert();
+            buffer.add(s);
+        }
+
+        buffer.sort();
+
+        int lastId = Integer.MAX_VALUE;
+        for (StorableWithLobs s : buffer) {
+            assertTrue(s.getId() < lastId);
+            String str = s.getBlobValue().asString();
+            assertTrue(str.startsWith("hello "));
+            assertTrue((Integer.parseInt(str.substring(6)) + 1) == s.getId());
+            lastId = s.getId();
+        }
+
+        buffer.close();
     }
 
     private void testBuffer(int size) throws Exception {
