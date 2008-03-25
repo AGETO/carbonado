@@ -272,6 +272,9 @@ public class TestChainedProperty extends TestCase {
 
         p5 = ChainedProperty.parse(info3, "(address).addressState");
         assertEquals(p4, p2.append(p5));
+
+        ChainedProperty<Shipment> p6 = ChainedProperty.parse(info2, "(order).(address)");
+        assertEquals(p3, p.append(p6));
     }
 
     public void test_trim() {
