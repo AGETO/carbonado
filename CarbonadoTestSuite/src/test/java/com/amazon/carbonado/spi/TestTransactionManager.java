@@ -71,7 +71,7 @@ public class TestTransactionManager extends TestCase {
 
         ExecutorService es = Executors.newSingleThreadExecutor();
 
-        Transaction txn2 = es.submit(new Callable<Transaction>() {
+        final Transaction txn2 = es.submit(new Callable<Transaction>() {
             public Transaction call() {
                 return mTxnMgr.localScope().enter(null);
             }
@@ -91,6 +91,18 @@ public class TestTransactionManager extends TestCase {
 
         txn.detach();
 
+        try {
+            txn2.attach();
+            fail();
+        } catch (IllegalStateException e) {
+        }
+
+        es.submit(new Runnable() {
+            public void run() {
+                txn2.detach();
+            }
+        }).get();
+
         txn2.attach();
         txn2.detach();
         txn2.attach();
@@ -101,11 +113,7 @@ public class TestTransactionManager extends TestCase {
         } catch (IllegalStateException e) {
         }
 
-        try {
-            txn.detach();
-            fail();
-        } catch (IllegalStateException e) {
-        }
+        txn.detach();
 
         txn2.exit();
 
@@ -115,11 +123,7 @@ public class TestTransactionManager extends TestCase {
         } catch (IllegalStateException e) {
         }
 
-        try {
-            txn.detach();
-            fail();
-        } catch (IllegalStateException e) {
-        }
+        txn.detach();
 
         txn2.detach();
 
