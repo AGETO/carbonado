@@ -204,8 +204,9 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
         runDatabasePrepareForOpeningHook(database);
 
         String fileName = dbRepository.getDatabaseFileName(name);
+        String dbName = dbRepository.getDatabaseName(name);
         try {
-            database.open(txn, fileName, null, Db.DB_BTREE, flags, 0);
+            database.open(txn, fileName, dbName, Db.DB_BTREE, flags, 0);
         } catch (FileNotFoundException e) {
             throw new FileNotFoundException(e.getMessage() + ": " + fileName);
         }
@@ -216,9 +217,10 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
     protected void env_removeDatabase(DbTxn txn, String databaseName) throws Exception {
         DB_Legacy_Repository dbRepository = (DB_Legacy_Repository) getRepository();
         String fileName = dbRepository.getDatabaseFileName(databaseName);
+        String dbName = dbRepository.getDatabaseName(databaseName);
         DbEnv env = dbRepository.mEnv;
         Db database = new Db(env, 0);
-        database.remove(fileName, null, 0);
+        database.remove(fileName, dbName, 0);
         database.close(0);
     }
 
