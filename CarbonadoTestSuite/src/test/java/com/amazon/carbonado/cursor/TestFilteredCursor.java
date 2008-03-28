@@ -800,6 +800,32 @@ public class TestFilteredCursor extends TestCase {
         assertEquals(4, matches.get(2).getOrderID());
     }
 
+    public void testExpandedForm() throws Exception {
+        // Tests that duplicate property filters don't break code generation.
+
+        Repository repo = new ToyRepository();
+        Storage<Order> orders = repo.storageFor(Order.class);
+
+        Filter<Order> filter = Filter.filterFor
+            (Order.class, "orderTotal < ? & (orderNumber = ? | addressID = ?)");
+
+        FilterValues<Order> fv = filter.initialFilterValues();
+        fv = fv.withValues(100, "xyz", 123);
+
+        // Create the duplicates as a result of this transformation.
+        filter = filter.disjunctiveNormalForm();
+
+        Cursor<Order> cursor = EmptyCursor.the();
+
+        try {
+            cursor = FilteredCursor.applyFilter(filter, fv, cursor);
+        } catch (LinkageError e) {
+            throw e;
+        }
+
+        assertFalse(cursor.hasNext());
+    }
+
     @PrimaryKey("ID")
     public static interface FloatRecord extends Storable {
         int getID();
