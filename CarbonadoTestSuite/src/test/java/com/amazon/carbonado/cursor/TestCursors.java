@@ -92,81 +92,50 @@ public class TestCursors extends TestCase {
         assertFalse(cursor.hasNext());
     }
 
-    public void testSlice() throws Exception {
-        Cursor<Element> range;
+    public void testSkip() throws Exception {
+        Cursor<Element> c;
 
-        // Empty source.
-        range = SliceCursor.slice(createElements(), 10, 100);
-        compareElements(range);
-        range = SliceCursor.slice(createElements(), 10, 10);
-        compareElements(range);
+        // empty source
+        c = new SkipCursor<Element>(createElements(), 0);
+        compareElements(c);
+        c = new SkipCursor<Element>(createElements(), 10);
+        compareElements(c);
 
-        // start at zero
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 100);
-        compareElements(range, 1, 2, 3, 4, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 5);
-        compareElements(range, 1, 2, 3, 4, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 4);
-        compareElements(range, 1, 2, 3, 4);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 1);
-        compareElements(range, 1);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 0, 0);
-        compareElements(range);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 0);
+        compareElements(c, 1, 2, 3, 4, 5);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 1);
+        compareElements(c, 2, 3, 4, 5);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        compareElements(c, 3, 4, 5);
 
-        // start after zero
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 100);
-        compareElements(range, 2, 3, 4, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 5);
-        compareElements(range, 2, 3, 4, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 4);
-        compareElements(range, 2, 3, 4);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 2);
-        compareElements(range, 2);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 1, 1);
-        compareElements(range);
+        // skip too much
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 5);
+        compareElements(c);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 6);
+        compareElements(c);
+    }
 
-        // start too high
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 100);
-        compareElements(range);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 50, 100);
-        compareElements(range);
+    public void testLimit() throws Exception {
+        Cursor<Element> c;
 
-        // start in middle but end high
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        compareElements(range, 3, 4, 5);
+        // empty source
+        c = new LimitCursor<Element>(createElements(), 0);
+        compareElements(c);
+        c = new LimitCursor<Element>(createElements(), 10);
+        compareElements(c);
 
-        // start after zero and skip
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(1, range.skipNext(1));
-        compareElements(range, 4, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 4);
-        assertEquals(1, range.skipNext(1));
-        compareElements(range, 4);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(2, range.skipNext(2));
-        compareElements(range, 5);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(3, range.skipNext(3));
-        compareElements(range);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(3, range.skipNext(4));
-        compareElements(range);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 0);
+        compareElements(c);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 1);
+        compareElements(c, 1);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        compareElements(c, 1, 2);
 
-        // start in middle, end high, and skip
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 2, 100);
-        assertEquals(2, range.skipNext(2));
-        compareElements(range, 5);
-
-        // start too high and skip
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 100);
-        assertEquals(0, range.skipNext(1));
-        compareElements(range);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 5, 5);
-        assertEquals(0, range.skipNext(1));
-        compareElements(range);
-        range = SliceCursor.slice(createElements(1, 2, 3, 4, 5), 500, 600);
-        assertEquals(0, range.skipNext(1));
-        compareElements(range);
+        // limit too high
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 5);
+        compareElements(c, 1, 2, 3, 4, 5);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 6);
+        compareElements(c, 1, 2, 3, 4, 5);
     }
 
     public void testUnion() throws Exception {
