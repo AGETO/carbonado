@@ -33,8 +33,6 @@ import com.amazon.carbonado.filter.Filter;
 import com.amazon.carbonado.filter.FilterValues;
 import com.amazon.carbonado.filter.PropertyFilter;
 
-import com.amazon.carbonado.repo.toy.ToyRepository;
-
 import com.amazon.carbonado.stored.Address;
 import com.amazon.carbonado.stored.Order;
 import com.amazon.carbonado.stored.OverIndexedUserAddress;
@@ -73,7 +71,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
     public void testNullFilter() throws Exception {
         UnionQueryAnalyzer uqa =
             new UnionQueryAnalyzer(Shipment.class, TestIndexedQueryAnalyzer.RepoAccess.INSTANCE);
-        UnionQueryAnalyzer.Result result = uqa.analyze(null, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(null, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -84,7 +82,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
             new UnionQueryAnalyzer(Shipment.class, TestIndexedQueryAnalyzer.RepoAccess.INSTANCE);
         Filter<Shipment> filter = Filter.filterFor(Shipment.class, "shipmentID = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -97,7 +95,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         filter = filter.bind();
         OrderingList<Shipment> orderings =
             makeOrdering(Shipment.class, "~shipmentID", "~orderID");
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, orderings);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, orderings, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -113,7 +111,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor(Shipment.class,
                                                    "shipmentID = ? | orderID = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(Shipment.class, "+shipmentID"), result.getTotalOrdering());
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
@@ -146,7 +144,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor(Shipment.class,
                                                    "shipmentID = ? | orderID > ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(Shipment.class, "+shipmentID"), result.getTotalOrdering());
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
@@ -179,7 +177,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor(Shipment.class,
                                                    "shipmentID = ? | orderID > ? & orderID <= ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(Shipment.class, "+shipmentID"), result.getTotalOrdering());
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
@@ -223,7 +221,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         filter = filter.bind();
         OrderingList<Shipment> orderings =
             makeOrdering(Shipment.class, "~shipmentID", "~orderID");
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, orderings);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, orderings, null);
         assertEquals(OrderingList.get(Shipment.class, "+shipmentID", "+orderID"),
                      result.getTotalOrdering());
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
@@ -269,7 +267,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
             (Shipment.class,
              "shipmentID = ? & (shipmentID = ? | orderID = ?)");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -297,7 +295,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
             (OverIndexedUserAddress.class,
              "city = ? & (city = ? | line1 = ?)");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<OverIndexedUserAddress>.Result> subResults =
             result.getSubResults();
 
@@ -329,7 +327,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "shipmentNotes = ? | shipperID = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -351,7 +349,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "shipmentNotes = ? | orderID = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(1, subResults.size());
@@ -373,7 +371,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "shipmentNotes = ? | orderID = ? & order.orderTotal > ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
 
         assertEquals(2, subResults.size());
@@ -406,7 +404,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<StorableTestBasic> filter = Filter.filterFor
             (StorableTestBasic.class, "doubleProp = ? | (stringProp = ? & intProp = ?) | id > ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(StorableTestBasic.class, "+id"), result.getTotalOrdering());
 
         QueryExecutor<StorableTestBasic> exec = result.createExecutor();
@@ -446,7 +444,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<StorableTestBasic> filter = Filter.filterFor
             (StorableTestBasic.class, "doubleProp = ? | stringProp = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(StorableTestBasic.class, "+doubleProp", "+stringProp"),
                      result.getTotalOrdering());
 
@@ -485,7 +483,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<StorableTestBasic> filter = Filter.filterFor
             (StorableTestBasic.class, "stringProp = ? | stringProp = ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(StorableTestBasic.class, "+stringProp", "+doubleProp"),
                      result.getTotalOrdering());
 
@@ -521,7 +519,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<StorableTestBasic> filter = Filter.filterFor
             (StorableTestBasic.class, "doubleProp = ? | stringProp = ? | id > ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(StorableTestBasic.class, "+doubleProp", "+id"),
                      result.getTotalOrdering());
 
@@ -565,7 +563,7 @@ public class TestUnionQueryAnalyzer extends TestCase {
         Filter<StorableTestBasic> filter = Filter.filterFor
             (StorableTestBasic.class, "stringProp = ? | stringProp = ? | id > ?");
         filter = filter.bind();
-        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null);
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
         assertEquals(OrderingList.get(StorableTestBasic.class, "+stringProp", "+doubleProp"),
                      result.getTotalOrdering());
 

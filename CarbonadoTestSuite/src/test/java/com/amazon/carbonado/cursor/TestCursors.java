@@ -113,6 +113,26 @@ public class TestCursors extends TestCase {
         compareElements(c);
         c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 6);
         compareElements(c);
+
+        // call skip on cursor
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        assertEquals(1, c.skipNext(1));
+        compareElements(c, 4, 5);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        assertEquals(2, c.skipNext(2));
+        compareElements(c, 5);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        assertEquals(3, c.skipNext(3));
+        compareElements(c);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 2);
+        assertEquals(3, c.skipNext(4));
+        compareElements(c);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 100);
+        assertEquals(0, c.skipNext(4));
+        compareElements(c);
+        c = new SkipCursor<Element>(createElements(1, 2, 3, 4, 5), 0);
+        assertEquals(4, c.skipNext(4));
+        compareElements(c, 5);
     }
 
     public void testLimit() throws Exception {
@@ -136,6 +156,26 @@ public class TestCursors extends TestCase {
         compareElements(c, 1, 2, 3, 4, 5);
         c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 6);
         compareElements(c, 1, 2, 3, 4, 5);
+
+        // call skip on cursor
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 3);
+        assertEquals(1, c.skipNext(1));
+        compareElements(c, 2, 3);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 3);
+        assertEquals(2, c.skipNext(2));
+        compareElements(c, 3);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 3);
+        assertEquals(3, c.skipNext(3));
+        compareElements(c);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 3);
+        assertEquals(3, c.skipNext(4));
+        compareElements(c);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 100);
+        assertEquals(4, c.skipNext(4));
+        compareElements(c, 5);
+        c = new LimitCursor<Element>(createElements(1, 2, 3, 4, 5), 0);
+        assertEquals(0, c.skipNext(4));
+        compareElements(c);
     }
 
     public void testUnion() throws Exception {

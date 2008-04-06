@@ -44,8 +44,6 @@ import com.amazon.carbonado.filter.Filter;
 import com.amazon.carbonado.filter.FilterValues;
 import com.amazon.carbonado.filter.PropertyFilter;
 
-import com.amazon.carbonado.repo.toy.ToyRepository;
-
 import com.amazon.carbonado.stored.Address;
 import com.amazon.carbonado.stored.Order;
 import com.amazon.carbonado.stored.OverIndexedUserAddress;
@@ -82,7 +80,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         IndexedQueryAnalyzer iqa = new IndexedQueryAnalyzer(Address.class, RepoAccess.INSTANCE);
         Filter<Address> filter = Filter.filterFor(Address.class, "addressZip = ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertFalse(result.handlesAnything());
         assertEquals(filter, result.getCompositeScore().getFilteringScore().getRemainderFilter());
@@ -95,7 +93,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         IndexedQueryAnalyzer iqa = new IndexedQueryAnalyzer(Address.class, RepoAccess.INSTANCE);
         Filter<Address> filter = Filter.filterFor(Address.class, "addressID = ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(filter, result.getCompositeScore().getFilteringScore().getIdentityFilter());
@@ -108,7 +106,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         IndexedQueryAnalyzer iqa = new IndexedQueryAnalyzer(Shipment.class, RepoAccess.INSTANCE);
         Filter<Shipment> filter = Filter.filterFor(Shipment.class, "shipmentID = ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(filter, result.getCompositeScore().getFilteringScore().getIdentityFilter());
@@ -118,7 +116,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
 
         filter = Filter.filterFor(Shipment.class, "orderID = ?");
         filter = filter.bind();
-        result = iqa.analyze(filter, null);
+        result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(filter, result.getCompositeScore().getFilteringScore().getIdentityFilter());
@@ -129,7 +127,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
 
         filter = Filter.filterFor(Shipment.class, "orderID > ?");
         filter = filter.bind();
-        result = iqa.analyze(filter, null);
+        result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertTrue(result.getCompositeScore().getFilteringScore().hasRangeStart());
@@ -148,7 +146,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         IndexedQueryAnalyzer iqa = new IndexedQueryAnalyzer(Shipment.class, RepoAccess.INSTANCE);
         Filter<Shipment> filter = Filter.filterFor(Shipment.class, "order.orderTotal >= ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertTrue(result.getCompositeScore().getFilteringScore().hasRangeStart());
@@ -164,7 +162,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "shipmentNotes = ? & order.orderTotal >= ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertTrue(result.getCompositeScore().getFilteringScore().hasRangeStart());
@@ -183,7 +181,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "orderID >= ? & order.orderTotal >= ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertTrue(result.getCompositeScore().getFilteringScore().hasRangeStart());
@@ -200,7 +198,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         Filter<Shipment> filter = Filter.filterFor
             (Shipment.class, "order.address.addressState = ?");
         filter = filter.bind();
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(filter, result.getCompositeScore().getFilteringScore().getIdentityFilter());
@@ -217,7 +215,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
             (Shipment.class, "order.address.addressState = ? & order.address.addressZip = ?");
         FilterValues<Shipment> values = filter.initialFilterValues();
         filter = values.getFilter();
-        IndexedQueryAnalyzer<Shipment>.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer<Shipment>.Result result = iqa.analyze(filter, null, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(Filter.filterFor(Shipment.class, "order.address.addressState = ?").bind(),
@@ -231,7 +229,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
 
         QueryExecutor<Shipment> joinExec = JoinedQueryExecutor.build
             (RepoAccess.INSTANCE,
-             result.getForeignProperty(), result.getFilter(), result.getOrdering());
+             result.getForeignProperty(), result.getFilter(), result.getOrdering(), null);
 
         FilterValues<Shipment> fv = values.with("WA").with("12345");
 
@@ -273,7 +271,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         filter = values.getFilter();
         OrderingList<Shipment> ordering = OrderingList
             .get(Shipment.class, "order.address.addressCity", "shipmentNotes", "order.orderTotal");
-        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, ordering);
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, ordering, null);
 
         assertTrue(result.handlesAnything());
         assertEquals(Filter.filterFor(Shipment.class, "order.address.addressState = ?").bind(),
@@ -285,7 +283,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
 
         QueryExecutor<Shipment> joinExec = JoinedQueryExecutor.build
             (RepoAccess.INSTANCE,
-             result.getForeignProperty(), result.getFilter(), result.getOrdering());
+             result.getForeignProperty(), result.getFilter(), result.getOrdering(), null);
 
         FilterValues<Shipment> fv =
             values.with("WA").with(45).with("12345").with(100).with("Z").with(2);
@@ -346,7 +344,8 @@ public class TestIndexedQueryAnalyzer extends TestCase {
             (OverIndexedUserAddress.class, "country > ? & city != ? & state = ? & postalCode = ?");
         FilterValues<OverIndexedUserAddress> values = filter.initialFilterValues();
         filter = values.getFilter();
-        IndexedQueryAnalyzer<OverIndexedUserAddress>.Result result = iqa.analyze(filter, null);
+        IndexedQueryAnalyzer<OverIndexedUserAddress>.Result result =
+            iqa.analyze(filter, null, null);
 
         QueryExecutor<OverIndexedUserAddress> qe = result.createExecutor();
 
@@ -398,7 +397,9 @@ public class TestIndexedQueryAnalyzer extends TestCase {
             return this;
         }
 
-        public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering) {
+        public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering,
+                                         QueryHints hints)
+        {
             Iterable<S> iterable = Collections.emptyList();
 
             QueryExecutor<S> exec = new IterableQueryExecutor<S>

@@ -93,7 +93,7 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             OrderingList.get(UserInfo.class, "+address.country");
 
         QueryExecutor<UserInfo> userExecutor = JoinedQueryExecutor.build
-            (repoAccess, targetToSourceProperty, targetFilter, targetOrdering);
+            (repoAccess, targetToSourceProperty, targetFilter, targetOrdering, null);
 
         //System.out.println();
         //userExecutor.printPlan(System.out, 0, null);
@@ -176,7 +176,7 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
         targetOrdering = OrderingList.get(UserInfo.class, "+address.neighbor.country");
 
         userExecutor = JoinedQueryExecutor.build
-            (repoAccess, targetToSourceProperty, targetFilter, targetOrdering);
+            (repoAccess, targetToSourceProperty, targetFilter, targetOrdering, null);
 
         assertEquals("address.neighbor.state = ?", userExecutor.getFilter().toString());
         assertEquals("+address.neighbor.country", userExecutor.getOrdering().get(0).toString());
@@ -219,7 +219,8 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             return this;
         }
 
-        public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering)
+        public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering,
+                                         QueryHints hints)
             throws RepositoryException
         {
             Storage<S> storage = mRepository.storageFor(mType);

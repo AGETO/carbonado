@@ -54,6 +54,7 @@ import com.amazon.carbonado.info.StorableIntrospector;
 
 import com.amazon.carbonado.qe.QueryExecutorFactory;
 import com.amazon.carbonado.qe.QueryFactory;
+import com.amazon.carbonado.qe.QueryHints;
 import com.amazon.carbonado.qe.SortedQueryExecutor;
 import com.amazon.carbonado.qe.FilteredQueryExecutor;
 import com.amazon.carbonado.qe.IterableQueryExecutor;
@@ -103,7 +104,7 @@ public class ToyStorage<S extends Storable>
     }
 
     public Query<S> query() {
-        return new ToyQuery(null, null, null, null);
+        return new ToyQuery(null, null, null);
     }
 
     public Query<S> query(String filter) {
@@ -111,14 +112,18 @@ public class ToyStorage<S extends Storable>
     }
 
     public Query<S> query(Filter<S> filter) {
-        return new ToyQuery(filter, null, null, null);
+        return new ToyQuery(filter, null, null);
     }
 
-    public Query<S> query(Filter<S> filter, FilterValues<S> values, OrderingList<S> ordering) {
-        return new ToyQuery(filter, values, ordering, null);
+    public Query<S> query(Filter<S> filter, FilterValues<S> values, OrderingList<S> ordering,
+                          QueryHints hints)
+    {
+        return new ToyQuery(filter, values, ordering);
     }
 
-    public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering) {
+    public QueryExecutor<S> executor(Filter<S> filter, OrderingList<S> ordering,
+                                     QueryHints hints)
+    {
         QueryExecutor<S> executor = new IterableQueryExecutor<S>(mType, mData, mDataLock);
 
         if (filter != null) {
@@ -269,10 +274,9 @@ public class ToyStorage<S extends Storable>
     private class ToyQuery extends StandardQuery<S> {
         ToyQuery(Filter<S> filter,
                  FilterValues<S> values,
-                 OrderingList<S> ordering,
-                 QueryExecutor<S> executor)
+                 OrderingList<S> ordering)
         {
-            super(filter, values, ordering, executor);
+            super(filter, values, ordering, null);
         }
 
         protected Transaction enterTransaction(IsolationLevel level) {
@@ -289,9 +293,9 @@ public class ToyStorage<S extends Storable>
 
         protected StandardQuery<S> newInstance(FilterValues<S> values,
                                                OrderingList<S> ordering,
-                                               QueryExecutor<S> executor)
+                                               QueryHints hints)
         {
-            return new ToyQuery(values.getFilter(), values, ordering, executor);
+            return new ToyQuery(values.getFilter(), values, ordering);
         }
     }
 }
