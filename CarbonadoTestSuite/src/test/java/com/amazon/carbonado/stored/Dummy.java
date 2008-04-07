@@ -139,6 +139,10 @@ public class Dummy implements Storable {
         throw error();
     }
 
+    public Storable prepare() {
+        throw error();
+    }
+
     public void writeTo(java.io.OutputStream out) {
         throw error(); 
     }

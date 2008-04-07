@@ -3085,6 +3085,11 @@ public class TestStorables extends TestCase {
             return null;
         }
 
+        public Storable prepare() {
+            if (mTrace) System.out.println("prepare");
+            return null;
+        }
+
         public String toStringKeyOnly() {
             if (mTrace) System.out.println("toStringKeyOnly");
             mInvocationTracks |= sToStringKeyOnly;    // 0x10000
