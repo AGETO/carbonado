@@ -72,7 +72,14 @@ public class TestMergeSortBuffer extends TestCase {
     }
 
     public void testEmptyBuffer() throws Exception {
-        Storage<StorableTestBasic> storage = mRepository.storageFor(StorableTestBasic.class);
+        testEmptyBuffer(mRepository.storageFor(StorableTestBasic.class));
+    }
+
+    public void testEmptyBufferAutoStorage() throws Exception {
+        testEmptyBuffer(null);
+    }
+
+    private void testEmptyBuffer(Storage<StorableTestBasic> storage) throws Exception {
         SortBuffer<StorableTestBasic> buffer = new MergeSortBuffer<StorableTestBasic>(storage);
         buffer.prepare(mComparator);
 
@@ -98,37 +105,58 @@ public class TestMergeSortBuffer extends TestCase {
     }
 
     public void testSmallBuffer() throws Exception {
-        testBuffer(SMALL_BUFFER_SIZE);
+        testBuffer(mRepository.storageFor(StorableTestBasic.class), SMALL_BUFFER_SIZE);
+    }
+
+    public void testSmallBufferAutoStorage() throws Exception {
+        testBuffer(null, SMALL_BUFFER_SIZE);
     }
 
     public void testMedium() throws Exception {
-        testBuffer(MEDIUM_BUFFER_SIZE);
+        testBuffer(mRepository.storageFor(StorableTestBasic.class), MEDIUM_BUFFER_SIZE);
+    }
+
+    public void testMediumAutoStorage() throws Exception {
+        testBuffer(null, MEDIUM_BUFFER_SIZE);
     }
 
     public void testMediumOdd() throws Exception {
-        testBuffer(MEDIUM_BUFFER_SIZE + 13);
+        testBuffer(mRepository.storageFor(StorableTestBasic.class), MEDIUM_BUFFER_SIZE + 13);
+    }
+
+    public void testMediumOddAutoStorage() throws Exception {
+        testBuffer(null, MEDIUM_BUFFER_SIZE + 13);
     }
 
     public void testLarge() throws Exception {
-        testBuffer(LARGE_BUFFER_SIZE);
+        testBuffer(mRepository.storageFor(StorableTestBasic.class), LARGE_BUFFER_SIZE);
+    }
+
+    public void testLargeAutoStorage() throws Exception {
+        testBuffer(null, LARGE_BUFFER_SIZE);
     }
 
     public void testLargeOdd() throws Exception {
-        testBuffer(LARGE_BUFFER_SIZE + 13);
+        testBuffer(mRepository.storageFor(StorableTestBasic.class), LARGE_BUFFER_SIZE + 13);
     }
 
-    public void testHuge() throws Exception {
-        testBuffer(HUGE_BUFFER_SIZE);
+    public void testLargeOddAutoStorage() throws Exception {
+        testBuffer(null, LARGE_BUFFER_SIZE + 13);
+    }
+
+    public void testHugeAutoStorage() throws Exception {
+        testBuffer(null, HUGE_BUFFER_SIZE);
     }
 
     public void testLobs() throws Exception {
         Comparator<StorableWithLobs> c = BeanComparator.forClass(StorableWithLobs.class)
             .orderBy("-id");
 
-        Storage<StorableWithLobs> storage = mRepository.storageFor(StorableWithLobs.class);
         SortBuffer<StorableWithLobs> buffer =
-            new MergeSortBuffer<StorableWithLobs>(storage, null, 100);
+            new MergeSortBuffer<StorableWithLobs>(null, null, 100);
         buffer.prepare(c);
+
+        Storage<StorableWithLobs> storage = mRepository.storageFor(StorableWithLobs.class);
 
         for (int i=0; i<5000; i++) {
             StorableWithLobs s = storage.prepare();
@@ -151,10 +179,13 @@ public class TestMergeSortBuffer extends TestCase {
         buffer.close();
     }
 
-    private void testBuffer(int size) throws Exception {
-        Storage<StorableTestBasic> storage = mRepository.storageFor(StorableTestBasic.class);
+    private void testBuffer(Storage<StorableTestBasic> storage, int size) throws Exception {
         SortBuffer<StorableTestBasic> buffer = new MergeSortBuffer<StorableTestBasic>(storage);
         buffer.prepare(mComparator);
+
+        if (storage == null) {
+            storage = mRepository.storageFor(StorableTestBasic.class);
+        }
 
         final long seed = 345891237L;
 
