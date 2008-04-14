@@ -2430,6 +2430,74 @@ public class TestStorables extends TestCase {
         assertEquals(total, actual);
     }
 
+    public void test_fetchSlice() throws Exception {
+        Storage<StorableTestBasic> storage = getRepository().storageFor(StorableTestBasic.class);
+
+        for (int i=0; i<100; i++) {
+            StorableTestBasic sb = storage.prepare();
+            sb.setId(i);
+            sb.setIntProp(99 - i);
+            sb.setLongProp(i);
+            sb.setDoubleProp(i);
+            sb.setStringProp(String.valueOf(i));
+            sb.insert();
+        }
+
+        // No slice
+        List<StorableTestBasic> results;
+        results = storage.query().fetch(0, null).toList();
+        assertEquals(100, results.size());
+
+        // To slice
+        results = storage.query().fetch(0, 50L).toList();
+        assertEquals(50, results.size());
+        results = storage.query().orderBy("id").fetch(0, 50L).toList();
+        assertEquals(50, results.size());
+        assertEquals(0, results.get(0).getId());
+        assertEquals(1, results.get(1).getId());
+        results = storage.query().orderBy("intProp").fetch(0, 50L).toList();
+        assertEquals(50, results.size());
+        assertEquals(99, results.get(0).getId());
+        assertEquals(98, results.get(1).getId());
+
+        // From slice
+        results = storage.query().fetch(40, null).toList();
+        assertEquals(60, results.size());
+        results = storage.query().orderBy("id").fetch(40, null).toList();
+        assertEquals(60, results.size());
+        assertEquals(40, results.get(0).getId());
+        assertEquals(41, results.get(1).getId());
+        results = storage.query().orderBy("intProp").fetch(40, null).toList();
+        assertEquals(60, results.size());
+        assertEquals(59, results.get(0).getId());
+        assertEquals(58, results.get(1).getId());
+
+        // From and to slice
+        results = storage.query().fetch(40, 50L).toList();
+        assertEquals(10, results.size());
+        results = storage.query().orderBy("id").fetch(40, 50L).toList();
+        assertEquals(10, results.size());
+        assertEquals(40, results.get(0).getId());
+        assertEquals(41, results.get(1).getId());
+        results = storage.query().orderBy("intProp").fetch(40, 50L).toList();
+        assertEquals(10, results.size());
+        assertEquals(59, results.get(0).getId());
+        assertEquals(58, results.get(1).getId());
+
+        // Filter and slice
+        Query<StorableTestBasic> query = storage.query("doubleProp >= ?").with(30.0);
+        results = query.fetch(10, 20L).toList();
+        assertEquals(10, results.size());
+        results = query.orderBy("id").fetch(10, 20L).toList();
+        assertEquals(10, results.size());
+        assertEquals(40, results.get(0).getId());
+        assertEquals(41, results.get(1).getId());
+        results = query.orderBy("intProp").fetch(10, 20L).toList();
+        assertEquals(10, results.size());
+        assertEquals(89, results.get(0).getId());
+        assertEquals(88, results.get(1).getId());
+    }
+
     public void test_lobInsert() throws Exception {
         Storage<StorableWithLobs> storage = getRepository().storageFor(StorableWithLobs.class);
 
