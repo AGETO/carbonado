@@ -2404,6 +2404,50 @@ public class TestStorables extends TestCase {
 
         assertEquals(total, actual);
 
+        // Try using "after" method and additional filtering.
+
+        orderBy = new String[] {"a", "b", "c", "d", "e", "f"};
+        query = storage.query().orderBy(orderBy);
+        {
+            ManyKeys2 obj = storage.prepare();
+            obj.setA(0);
+            obj.setB(1);
+            obj.setC(2);
+            query = query.after(obj);
+        }
+        query = query.and("d = ?").with(3);
+
+        cursor = query.fetch();
+
+        actual = 0;
+        last = null;
+        while (cursor.hasNext()) {
+            actual++;
+            ManyKeys2 obj = cursor.next();
+            if (last != null) {
+                assertTrue(comparator.compare(last, obj) < 0);
+            }
+            last = obj;
+        }
+
+        assertEquals(928, actual);
+
+        // Try not after.
+
+        orderBy = new String[] {"a", "b", "c", "d", "e", "f"};
+        query = storage.query().orderBy(orderBy);
+        {
+            ManyKeys2 obj = storage.prepare();
+            obj.setA(0);
+            obj.setB(1);
+            obj.setC(2);
+            query = query.after(obj);
+        }
+        long count = query.count();
+        long ncount = query.not().count();
+
+        assertEquals(total, count + ncount);
+
         // Try again with funny mix of orderings. This will likely cause sort
         // operations to be performed, thus making it very slow.
 
