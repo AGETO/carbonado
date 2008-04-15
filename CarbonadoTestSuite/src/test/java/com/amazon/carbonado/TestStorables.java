@@ -2416,6 +2416,10 @@ public class TestStorables extends TestCase {
             query = query.after(obj);
         }
         query = query.and("d = ?").with(3);
+        // FIXME: shows "& d = 0", although results are correct.
+        System.out.println(query);
+        System.out.println(query.getFilter());
+        System.out.println(query.getFilterValues());
 
         cursor = query.fetch();
 
