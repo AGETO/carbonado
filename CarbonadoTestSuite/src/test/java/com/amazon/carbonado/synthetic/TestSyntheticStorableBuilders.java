@@ -43,6 +43,7 @@ import com.amazon.carbonado.SupportException;
 import com.amazon.carbonado.Version;
 import com.amazon.carbonado.Nullable;
 import com.amazon.carbonado.Join;
+import com.amazon.carbonado.Name;
 
 import com.amazon.carbonado.adapter.YesNoAdapter;
 import com.amazon.carbonado.adapter.TextAdapter;
@@ -69,26 +70,25 @@ public class TestSyntheticStorableBuilders extends TestCase {
 
     private static final ValueVendor VENDOR = new ValueVendor();
 
-    public static final String VERSION = '@'
-            + Version.class.toString().substring(10) + "()";
+    public static final String NAME = '@' + Name.class.getName() + "(value=";
 
-    public static final String NULLABLE = '@'
-            + Nullable.class.toString().substring(10) + "()";
+    public static final String VERSION = '@' + Version.class.getName() + "()";
 
-    public static final String JOIN = '@' + Join.class.toString().substring(10) + '(';
+    public static final String NULLABLE = '@' + Nullable.class.getName() + "()";
+
+    public static final String JOIN = '@' + Join.class.getName() + '(';
 
     public static final String INTERNAL = "internal=[]";
 
     public static final String EXTERNAL = "external=[]";
 
-    public final static String YESNO = '@'
-            + YesNoAdapter.class.toString().substring(10) + "(lenient=true)";
+    public final static String YESNO = '@' + YesNoAdapter.class.getName() + "(lenient=true)";
 
     public static final String TEXT = '@'
-            + TextAdapter.class.toString().substring(10) + "(charset=UTF-8, altCharsets=[])";
+        + TextAdapter.class.getName() + "(charset=UTF-8, altCharsets=[])";
 
     public static final String TEXT_2 = '@'
-            + TextAdapter.class.toString().substring(10) + "(altCharsets=[], charset=UTF-8)";
+        + TextAdapter.class.getName() + "(altCharsets=[], charset=UTF-8)";
 
     private static Set s_storableInterfaceMethods = new HashSet();
 
@@ -100,30 +100,29 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 new IndexDef("stringProp", Direction.ASCENDING),
                                 new IndexDef("longProp", Direction.DESCENDING), },
                         new MethodDef[] {
-                                new MethodDef("getStringProp", new String[] { TEXT }),
-                                new MethodDef("getLongProp", null),
-                                new MethodDef("getId", null),
-                                new MethodDef("getIntProp", null),
-                                new MethodDef("getDoubleProp", null),
+                                new MethodDef("getStringProp", NAME + "stringProp)", TEXT),
+                                new MethodDef("getLongProp", NAME + "longProp)"),
+                                new MethodDef("getId", NAME + "id)"),
+                                new MethodDef("getIntProp", NAME + "intProp)"),
+                                new MethodDef("getDoubleProp", NAME+ "doubleProp)"),
                                 // FIXME: add version prop to STB
-//                                new MethodDef("getVersionNumber",
-//                                              new String[] { VERSION }),
-                                new MethodDef("getIsConsistent_0", null),
-//                                new MethodDef("setVersionNumber", null),
-                                new MethodDef("copyFromMaster_0", null),
-                                new MethodDef("copyToMasterPk_0", null),
-                                new MethodDef("setId", null),
+                                // new MethodDef("getVersionNumber", VERSION),
+                                new MethodDef("getIsConsistent_0"),
+                                // new MethodDef("setVersionNumber"),
+                                new MethodDef("copyFromMaster_0"),
+                                new MethodDef("copyToMasterPk_0"),
+                                new MethodDef("setId"),
 
-                                new MethodDef("setStringProp", null),
-                                new MethodDef("setLongProp", null),
-                                new MethodDef("setID", null),
-                                new MethodDef("setIntProp", null),
-                                new MethodDef("setDoubleProp", null),
+                                new MethodDef("setStringProp"),
+                                new MethodDef("setLongProp"),
+                                new MethodDef("setID"),
+                                new MethodDef("setIntProp"),
+                                new MethodDef("setDoubleProp"),
 
-                                new MethodDef("getClass", null),
-                                new MethodDef("wait", null),
-                                new MethodDef("notify", null),
-                                new MethodDef("notifyAll", null), },
+                                new MethodDef("getClass"),
+                                new MethodDef("wait"),
+                                new MethodDef("notify"),
+                                new MethodDef("notifyAll"), },
                         null),
             new TestDef("string/long+synthetic",
                         StorableTestBasic.class,
@@ -132,33 +131,32 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 new IndexDef("stringProp", Direction.ASCENDING),
                                 new IndexDef("longProp", Direction.DESCENDING), },
                         new MethodDef[] {
-                                new MethodDef("getStringProp", new String[] { TEXT }),
-                                new MethodDef("getLongProp", null),
-                                new MethodDef("getId", null),
-                                new MethodDef("getIntProp", null),
-                                new MethodDef("getDoubleProp", null),
+                                new MethodDef("getStringProp", NAME + "stringProp)", TEXT),
+                                new MethodDef("getLongProp", NAME + "longProp)"),
+                                new MethodDef("getId", NAME + "id)"),
+                                new MethodDef("getIntProp", NAME + "intProp)"),
+                                new MethodDef("getDoubleProp", NAME + "doubleProp)"),
                                 // FIXME: add version prop to STB
-//                                new MethodDef("getVersionNumber",
-//                                              new String[] { VERSION }),
-                                new MethodDef("getIsConsistent_0", null),
-//                                new MethodDef("setVersionNumber", null),
-                                new MethodDef("copyFromMaster_0", null),
-                                new MethodDef("copyToMasterPk_0", null),
-                                new MethodDef("setId", null),
+                                // new MethodDef("getVersionNumber", VERSION),
+                                new MethodDef("getIsConsistent_0"),
+                                // new MethodDef("setVersionNumber"l),
+                                new MethodDef("copyFromMaster_0"),
+                                new MethodDef("copyToMasterPk_0"),
+                                new MethodDef("setId"),
 
-                                new MethodDef("setStringProp", null),
-                                new MethodDef("setLongProp", null),
-                                new MethodDef("setID", null),
-                                new MethodDef("setIntProp", null),
-                                new MethodDef("setDoubleProp", null),
+                                new MethodDef("setStringProp"),
+                                new MethodDef("setLongProp"),
+                                new MethodDef("setID"),
+                                new MethodDef("setIntProp"),
+                                new MethodDef("setDoubleProp"),
 
-                                new MethodDef("getClass", null),
-                                new MethodDef("wait", null),
-                                new MethodDef("notify", null),
-                                new MethodDef("notifyAll", null),
+                                new MethodDef("getClass"),
+                                new MethodDef("wait"),
+                                new MethodDef("notify"),
+                                new MethodDef("notifyAll"),
 
-                                new MethodDef("getTestSynth", new String[] { NULLABLE }),
-                                new MethodDef("setTestSynth", null),
+                                new MethodDef("getTestSynth", NAME + "testSynth)", NULLABLE),
+                                new MethodDef("setTestSynth"),
                         },
                         new SyntheticProperty[] { new SyntheticProperty("testSynth",
                                                                         String.class,
@@ -171,30 +169,29 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                 new IndexDef("stringProp", Direction.ASCENDING),
                                 new IndexDef("longProp", Direction.DESCENDING), },
                         new MethodDef[] {
+                                new MethodDef("getStringProp", NAME + "stringProp)", TEXT),
+                                new MethodDef("getLongProp", NAME + "longProp)"),
+                                new MethodDef("getId", NAME + "id)"),
+                                new MethodDef("getIntProp", NAME + "intProp)"),
+                                new MethodDef("getDoubleProp", NAME + "doubleProp)"),
+                                new MethodDef("getIsConsistent_0"),
+                                new MethodDef("copyFromMaster_0"),
+                                new MethodDef("copyToMasterPk_0"),
+                                new MethodDef("setId"),
 
-                                new MethodDef("getStringProp", new String[] { TEXT }),
-                                new MethodDef("getLongProp", null),
-                                new MethodDef("getId", null),
-                                new MethodDef("getIntProp", null),
-                                new MethodDef("getDoubleProp", null),
-                                new MethodDef("getIsConsistent_0", null),
-                                new MethodDef("copyFromMaster_0", null),
-                                new MethodDef("copyToMasterPk_0", null),
-                                new MethodDef("setId", null),
+                                new MethodDef("setStringProp"),
+                                new MethodDef("setLongProp"),
+                                new MethodDef("setID"),
+                                new MethodDef("setIntProp"),
+                                new MethodDef("setDoubleProp"),
 
-                                new MethodDef("setStringProp", null),
-                                new MethodDef("setLongProp", null),
-                                new MethodDef("setID", null),
-                                new MethodDef("setIntProp", null),
-                                new MethodDef("setDoubleProp", null),
+                                new MethodDef("getClass"),
+                                new MethodDef("wait"),
+                                new MethodDef("notify"),
+                                new MethodDef("notifyAll"),
 
-                                new MethodDef("getClass", null),
-                                new MethodDef("wait", null),
-                                new MethodDef("notify", null),
-                                new MethodDef("notifyAll", null),
-
-                                new MethodDef("getTestSynth", new String[] { VERSION  }),
-                                new MethodDef("setTestSynth", null),
+                                new MethodDef("getTestSynth", NAME + "testSynth)", NULLABLE),
+                                new MethodDef("setTestSynth"),
                         },
                         new SyntheticProperty[] { new SyntheticProperty("testSynth",
                                                                         int.class,
@@ -267,25 +264,24 @@ public class TestSyntheticStorableBuilders extends TestCase {
                                    "TSSB~synthId~synthStr~synthInt~synthVers~synthBool",
                                    null,
                                    new MethodDef[] {
-                                           new MethodDef("getSynthId",
-                                                         null),
+                                           new MethodDef("getSynthId", NAME + "synthId)"),
                                            new MethodDef("getSynthStr",
-                                                         new String[] { NULLABLE }),
-                                           new MethodDef("getSynthInt", null),
+                                                         NAME + "synthStr)", NULLABLE),
+                                           new MethodDef("getSynthInt", NAME + "synthInt)"),
                                            new MethodDef("getSynthVers",
-                                                         new String[] { VERSION }),
-                                           new MethodDef("isSynthBool", null),
+                                                         NAME + "synthVers)", VERSION),
+                                           new MethodDef("isSynthBool", NAME + "synthBool)"),
 
-                                           new MethodDef("setSynthId", null),
-                                           new MethodDef("setSynthStr", null),
-                                           new MethodDef("setSynthInt", null),
-                                           new MethodDef("setSynthVers", null),
-                                           new MethodDef("setSynthBool", null),
+                                           new MethodDef("setSynthId"),
+                                           new MethodDef("setSynthStr"),
+                                           new MethodDef("setSynthInt"),
+                                           new MethodDef("setSynthVers"),
+                                           new MethodDef("setSynthBool"),
 
-                                           new MethodDef("getClass", null),
-                                           new MethodDef("wait", null),
-                                           new MethodDef("notify", null),
-                                           new MethodDef("notifyAll", null), },
+                                           new MethodDef("getClass"),
+                                           new MethodDef("wait"),
+                                           new MethodDef("notify"),
+                                           new MethodDef("notifyAll"), },
                                    props);
 
         SyntheticStorableBuilder b = new SyntheticStorableBuilder(
@@ -498,7 +494,7 @@ public class TestSyntheticStorableBuilders extends TestCase {
 
         String[] mAnnotations;
 
-        public MethodDef(String name, String[] annotations) {
+        public MethodDef(String name, String... annotations) {
             mName = name;
             mAnnotations = annotations;
         }
