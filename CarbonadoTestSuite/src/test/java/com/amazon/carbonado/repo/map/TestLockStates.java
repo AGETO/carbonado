@@ -307,6 +307,18 @@ public class TestLockStates {
 
         System.out.println("12 ----------------------");
         System.out.println(lock);
+
+        {
+            lockForWrite(lock, locker);
+            lockForUpgrade(lock, locker);
+            unlockFromUpgrade(lock, locker);
+            unlockFromWrite(lock, locker);
+            lockForUpgrade(lock, locker2);
+            unlockFromUpgrade(lock, locker2);
+        }
+
+        System.out.println("13 ----------------------");
+        System.out.println(lock);
      }
 
     public TestLockStates() {

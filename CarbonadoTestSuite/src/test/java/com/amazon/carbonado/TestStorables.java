@@ -1678,7 +1678,7 @@ public class TestStorables extends TestCase {
         user2.tryUpdate();
 
         assertEquals("John", user.getFirstName());
-        user.tryUpdate();
+        assertTrue(user.tryUpdate());
         assertEquals("Jim", user.getFirstName());
 
         user2.setFirstName("Bob");
