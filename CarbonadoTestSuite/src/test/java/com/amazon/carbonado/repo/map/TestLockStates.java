@@ -20,96 +20,58 @@ package com.amazon.carbonado.repo.map;
 
 import java.util.concurrent.TimeUnit;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 /**
  * 
  *
  * @author Brian S O'Neill
  */
-public class TestLockStates {
-    private static void lockForRead(UpgradableLock lock, TestLockStates locker) {
-        //System.out.println("read lock");
-        lock.lockForRead(locker);
-        //System.out.println(lock);
+public class TestLockStates extends TestCase {
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
     }
 
-    private static void unlockFromRead(UpgradableLock lock, TestLockStates locker) {
-        //System.out.println("read unlock");
-        lock.unlockFromRead(locker);
-        //System.out.println(lock);
+    public static TestSuite suite() {
+        return new TestSuite(TestLockStates.class);
     }
 
-    private static void lockForUpgrade(UpgradableLock lock, TestLockStates locker) {
-        //System.out.println("upgrade lock");
-        lock.lockForUpgrade(locker);
-        //System.out.println(lock);
+    public TestLockStates(String s) {
+        super(s);
     }
 
-    private static void unlockFromUpgrade(UpgradableLock lock, TestLockStates locker) {
-        //System.out.println("upgrade unlock");
-        lock.unlockFromUpgrade(locker);
-        //System.out.println(lock);
+    protected void setUp() throws Exception {
     }
 
-    private static void lockForWrite(UpgradableLock lock, TestLockStates locker)
-        throws InterruptedException
-    {
-        //System.out.println("write lock");
-        lock.lockForWriteInterruptibly(locker);
-        //System.out.println(lock);
+    protected void tearDown() throws Exception {
     }
 
-    private static boolean tryLockForWrite(UpgradableLock lock, TestLockStates locker, int timeout)
-        throws InterruptedException
-    {
-        //System.out.println("write lock");
-        boolean result = lock.tryLockForWrite(locker, timeout, TimeUnit.MILLISECONDS);
-        //System.out.println(lock);
-        return result;
-    }
+    public void testStates() throws Exception {
+        UpgradableLock<Object> lock = new UpgradableLock<Object>();
+        Object locker = new Object();
+        Object locker2 = new Object();
 
-    private static void unlockFromWrite(UpgradableLock lock, TestLockStates locker) {
-        //System.out.println("write unlock");
-        lock.unlockFromWrite(locker);
-        //System.out.println(lock);
-    }
-
-    public static void main(String[] args) throws Exception {
-        UpgradableLock lock = new UpgradableLock();
-        TestLockStates locker = new TestLockStates();
-        TestLockStates locker2 = new TestLockStates();
-
-        /*
-        final Thread main = Thread.currentThread();
-
-        new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                }
-                main.interrupt();
-            }
-        }.start();
-        */
-
-        System.out.println("0 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
-            // start with no locks
-
             lockForRead(lock, locker);
+            assertFalse(lock.noLocksHeld());
             unlockFromRead(lock, locker);
+            assertTrue(lock.noLocksHeld());
 
             lockForUpgrade(lock, locker);
+            assertFalse(lock.noLocksHeld());
             unlockFromUpgrade(lock, locker);
+            assertTrue(lock.noLocksHeld());
 
             lockForWrite(lock, locker);
+            assertFalse(lock.noLocksHeld());
             unlockFromWrite(lock, locker);
+            assertTrue(lock.noLocksHeld());
         }
 
-        System.out.println("1 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForRead(lock, locker);
@@ -122,15 +84,14 @@ public class TestLockStates {
 
             // should deadlock
             if (tryLockForWrite(lock, locker, 1000)) {
-                System.out.println("***** did not deadlock!!!");
+                fail();
                 unlockFromWrite(lock, locker);
             }
 
             unlockFromRead(lock, locker);
         }
 
-        System.out.println("2 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForRead(lock, locker);
@@ -144,7 +105,7 @@ public class TestLockStates {
 
             // should deadlock
             if (tryLockForWrite(lock, locker, 1000)) {
-                System.out.println("***** did not deadlock!!!");
+                fail();
                 unlockFromWrite(lock, locker);
             }
 
@@ -152,8 +113,7 @@ public class TestLockStates {
             unlockFromUpgrade(lock, locker);
         }
 
-        System.out.println("3 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForUpgrade(lock, locker);
@@ -170,8 +130,7 @@ public class TestLockStates {
             unlockFromUpgrade(lock, locker);
         }
 
-        System.out.println("4 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
@@ -188,8 +147,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("5 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
@@ -208,8 +166,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("6 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
@@ -230,8 +187,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("7 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
@@ -252,8 +208,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("8 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForUpgrade(lock, locker);
@@ -262,8 +217,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("9 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForUpgrade(lock, locker);
@@ -276,8 +230,7 @@ public class TestLockStates {
             unlockFromWrite(lock, locker);
         }
 
-        System.out.println("10 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForUpgrade(lock, locker);
@@ -292,21 +245,16 @@ public class TestLockStates {
             unlockFromUpgrade(lock, locker);
         }
 
-        System.out.println("11 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
+            // This is illegal usage which current implementation allows -- and ignores.
             unlockFromUpgrade(lock, locker);
-            try {
-                unlockFromWrite(lock, locker);
-                System.out.println("***** unlocked");
-            } catch (IllegalMonitorStateException e) {
-            }
+            unlockFromWrite(lock, locker);
         }
 
-        System.out.println("12 ----------------------");
-        System.out.println(lock);
+        assertTrue(lock.noLocksHeld());
 
         {
             lockForWrite(lock, locker);
@@ -317,10 +265,53 @@ public class TestLockStates {
             unlockFromUpgrade(lock, locker2);
         }
 
-        System.out.println("13 ----------------------");
-        System.out.println(lock);
-     }
+        assertTrue(lock.noLocksHeld());
+    }
 
-    public TestLockStates() {
+    private static void lockForRead(UpgradableLock<Object> lock, Object locker) {
+        //System.out.println("read lock");
+        lock.lockForRead(locker);
+        //System.out.println(lock);
+    }
+
+    private static void unlockFromRead(UpgradableLock<Object> lock, Object locker) {
+        //System.out.println("read unlock");
+        lock.unlockFromRead(locker);
+        //System.out.println(lock);
+    }
+
+    private static void lockForUpgrade(UpgradableLock<Object> lock, Object locker) {
+        //System.out.println("upgrade lock");
+        lock.lockForUpgrade(locker);
+        //System.out.println(lock);
+    }
+
+    private static void unlockFromUpgrade(UpgradableLock<Object> lock, Object locker) {
+        //System.out.println("upgrade unlock");
+        lock.unlockFromUpgrade(locker);
+        //System.out.println(lock);
+    }
+
+    private static void lockForWrite(UpgradableLock<Object> lock, Object locker)
+        throws InterruptedException
+    {
+        //System.out.println("write lock");
+        lock.lockForWriteInterruptibly(locker);
+        //System.out.println(lock);
+    }
+
+    private static boolean tryLockForWrite(UpgradableLock<Object> lock, Object locker, int timeout)
+        throws InterruptedException
+    {
+        //System.out.println("write lock");
+        boolean result = lock.tryLockForWrite(locker, timeout, TimeUnit.MILLISECONDS);
+        //System.out.println(lock);
+        return result;
+    }
+
+    private static void unlockFromWrite(UpgradableLock<Object> lock, Object locker) {
+        //System.out.println("write unlock");
+        lock.unlockFromWrite(locker);
+        //System.out.println(lock);
     }
 }
