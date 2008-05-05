@@ -32,9 +32,11 @@ import org.cojen.classfile.MethodInfo;
 import org.cojen.classfile.Modifiers;
 import org.cojen.classfile.TypeDesc;
 import org.cojen.classfile.attribute.Annotation;
+import org.cojen.classfile.constant.ConstantUTFInfo;
 
 import org.cojen.util.ClassInjector;
 
+import com.amazon.carbonado.adapter.TextAdapter;
 import com.amazon.carbonado.adapter.YesNoAdapter;
 import com.amazon.carbonado.CorruptEncodingException;
 import com.amazon.carbonado.Nullable;
@@ -51,9 +53,12 @@ import com.amazon.carbonado.info.StorablePropertyAdapter;
 import com.amazon.carbonado.repo.sleepycat.BDBRepositoryBuilder;
 
 import com.amazon.carbonado.stored.FileInfo;
+import com.amazon.carbonado.stored.SomeText;
 import com.amazon.carbonado.stored.StorableDateIndex;
 import com.amazon.carbonado.stored.StorableTestBasic;
 import com.amazon.carbonado.stored.StorableTestMinimal;
+
+import com.amazon.carbonado.util.AnnotationDescParser;
 
 import com.amazon.carbonado.TestUtilities;
 
@@ -181,6 +186,79 @@ public class TestLayout extends TestCase {
             assertEquals(YesNoAdapter.class.getName(), property.getAdapterTypeName());
             assertEquals("@Lcom/amazon/carbonado/adapter/YesNoAdapter;lenient=Z1;",
                          property.getAdapterParams());
+        }
+    }
+
+    public void testAdapter2() throws Exception {
+        // Run test twice: First time, records get inserted. Second time, they are loaded.
+        for (int i=0; i<2; i++) {
+            Layout layout = mFactory.layoutFor(SomeText.class);
+            
+            assertEquals(SomeText.class.getName(), layout.getStorableTypeName());
+            
+            List<LayoutProperty> properties = layout.getAllProperties();
+
+            assertEquals(8, properties.size());
+
+            LayoutProperty property;
+
+            int charsetCount = 0;
+            int altCharsetsCount = 0;
+
+            for (int j=1; j<=7; j++) {
+                property = properties.get(j);
+                assertEquals("text" + j, property.getPropertyName());
+                assertEquals("Ljava/lang/String;", property.getPropertyTypeDescriptor());
+                assertTrue(property.isNullable());
+                assertFalse(property.isPrimaryKeyMember());
+                assertEquals(TextAdapter.class.getName(), property.getAdapterTypeName());
+
+                String desc = property.getAdapterParams();
+                assertTrue(desc.startsWith
+                           ("@Lcom/amazon/carbonado/adapter/TextAdapter;altCharsets=["));
+
+                ClassFile cf = new ClassFile("test");
+                final MethodInfo mi = cf.addMethod(Modifiers.PUBLIC_ABSTRACT, "test", null, null);
+
+                Annotation ann = new AnnotationDescParser(desc) {
+                    protected Annotation buildRootAnnotation(TypeDesc rootAnnotationType) {
+                        return mi.addRuntimeVisibleAnnotation(rootAnnotationType);
+                    }
+                }.parse(null);
+
+                assertEquals("Lcom/amazon/carbonado/adapter/TextAdapter;",
+                             ann.getTypeConstant().getValue());
+
+                Map<String, Annotation.MemberValue> mvMap = ann.getMemberValues();
+
+                if (mvMap.containsKey("charset")) {
+                    charsetCount++;
+                    Annotation.MemberValue mv = mvMap.get("charset");
+                    assertEquals(Annotation.MEMBER_TAG_STRING, mv.getTag());
+                    ConstantUTFInfo value = (ConstantUTFInfo) mv.getValue();
+                    assertEquals("UTF-8", value.getValue());
+                }
+
+                if (mvMap.containsKey("altCharsets")) {
+                    altCharsetsCount++;
+                    Annotation.MemberValue mv = mvMap.get("altCharsets");
+                    assertEquals(Annotation.MEMBER_TAG_ARRAY, mv.getTag());
+                    Annotation.MemberValue[] values = (Annotation.MemberValue[]) mv.getValue();
+                    for (int k=0; k<values.length; k++) {
+                        Annotation.MemberValue element = values[k];
+                        assertEquals(Annotation.MEMBER_TAG_STRING, element.getTag());
+                        ConstantUTFInfo value = (ConstantUTFInfo) element.getValue();
+                        if (k == 0) {
+                            assertEquals("ASCII", value.getValue());
+                        } else if (k == 1) {
+                            assertEquals("UTF-16", value.getValue());
+                        }
+                    }
+                }
+            }
+
+            assertEquals(4, charsetCount);
+            assertTrue(altCharsetsCount >= 6);
         }
     }
 
