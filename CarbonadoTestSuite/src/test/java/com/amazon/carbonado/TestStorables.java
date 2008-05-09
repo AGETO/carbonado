@@ -2589,7 +2589,7 @@ public class TestStorables extends TestCase {
             assertEquals("the sky is falling", blob.asString());
 
             lobs.load();
-            assertEquals(blob, lobs.getBlobValue());
+            assertEquals(blob.asString(), lobs.getBlobValue().asString());
 
             Clob clob = lobs.getClobValue();
             Writer writer = clob.openWriter();
