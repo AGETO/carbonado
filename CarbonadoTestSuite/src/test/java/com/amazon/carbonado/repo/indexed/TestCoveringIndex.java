@@ -77,7 +77,7 @@ public class TestCoveringIndex extends TestCase {
             "  index scan: com.amazon.carbonado.stored.OverIndexedUserAddress\n" +
             "  ...index: {properties=[+state, +city, +country, +line2, +line1, ~addressID], unique=true}\n" + 
             "  ...identity filter: state = ?\n" +
-            "  ...covering filter: country > ? & city != ?";
+            "  ...covering filter: country > ? & city != ?\n";
 
         //System.out.println(plan);
         assertEquals(expected, plan);
@@ -93,7 +93,7 @@ public class TestCoveringIndex extends TestCase {
             "  index scan: com.amazon.carbonado.stored.OverIndexedUserAddress\n" +
             "  ...index: {properties=[+state, +city, +country, +line2, +line1, ~addressID], unique=true}\n" + 
             "  ...identity filter: state = Unknown\n" +
-            "  ...covering filter: country > D & city != Springfield";
+            "  ...covering filter: country > D & city != Springfield\n";
 
         //System.out.println(plan);
         assertEquals(expected, plan);
