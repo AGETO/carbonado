@@ -358,7 +358,7 @@ public class TestIndexedQueryAnalyzer extends TestCase {
             "  index scan: com.amazon.carbonado.stored.OverIndexedUserAddress\n" +
             "  ...index: {properties=[+state, +city, +country, +line2, +line1], unique=false}\n" + 
             "  ...identity filter: state = ?\n" +
-            "  ...covering filter: country > ? & city != ?";
+            "  ...covering filter: country > ? & city != ?\n";
 
         //System.out.println(plan);
         assertEquals(expected, plan);
