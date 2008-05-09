@@ -2599,8 +2599,8 @@ public class TestStorables extends TestCase {
             assertEquals("the quick brown fox", clob.asString());
 
             lobs.load();
-            assertEquals(blob, lobs.getBlobValue());
-            assertEquals(clob, lobs.getClobValue());
+            assertEquals(blob.asString(), lobs.getBlobValue().asString());
+            assertEquals(clob.asString(), lobs.getClobValue().asString());
         }
 
         // Test insert failure
@@ -2664,7 +2664,7 @@ public class TestStorables extends TestCase {
             lobs.update();
 
             assertNull(lobs.getBlobValue());
-            assertEquals(clob, lobs.getClobValue());
+            assertEquals(clob.asString(), lobs.getClobValue().asString());
 
             try {
                 blob.getLength();
@@ -2676,7 +2676,7 @@ public class TestStorables extends TestCase {
             lobs.load();
 
             assertNull(lobs.getBlobValue());
-            assertEquals(clob, lobs.getClobValue());
+            assertEquals(clob.asString(), lobs.getClobValue().asString());
 
             lobs.setClobValue(null);
 
@@ -2771,8 +2771,8 @@ public class TestStorables extends TestCase {
             assertEquals("12345", lobs.getBlobValue().asString());
             assertEquals("world?", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
 
             lobs.setClobValue(new StringClob("123456"));
             lobs.update();
@@ -2783,8 +2783,8 @@ public class TestStorables extends TestCase {
             assertEquals("12345", lobs.getBlobValue().asString());
             assertEquals("123456", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
         }
 
         // Test content replaces content of longer length
@@ -2806,8 +2806,8 @@ public class TestStorables extends TestCase {
             assertEquals("123", lobs.getBlobValue().asString());
             assertEquals("world?", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
 
             lobs.setClobValue(new StringClob("12"));
             lobs.update();
@@ -2818,8 +2818,8 @@ public class TestStorables extends TestCase {
             assertEquals("123", lobs.getBlobValue().asString());
             assertEquals("12", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
         }
 
         // Test content replaces content of shorter length
@@ -2841,8 +2841,8 @@ public class TestStorables extends TestCase {
             assertEquals("123456789", lobs.getBlobValue().asString());
             assertEquals("world?", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
 
             lobs.setClobValue(new StringClob("1234567890"));
             lobs.update();
@@ -2853,8 +2853,8 @@ public class TestStorables extends TestCase {
             assertEquals("123456789", lobs.getBlobValue().asString());
             assertEquals("1234567890", lobs.getClobValue().asString());
 
-            assertTrue(blob.equals(lobs.getBlobValue()));
-            assertTrue(clob.equals(lobs.getClobValue()));
+            assertTrue(blob.asString().equals(lobs.getBlobValue().asString()));
+            assertTrue(clob.asString().equals(lobs.getClobValue().asString()));
         }
 
         // Test update failure
