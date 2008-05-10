@@ -1479,10 +1479,14 @@ public class TestStorables extends TestCase {
     }
 
     public void test_derivedJoinIndex() throws Exception {
-        Storage<WithDerivedChainA> aStorage = getRepository().storageFor(WithDerivedChainA.class);
-        Storage<WithDerivedChainB> bStorage = getRepository().storageFor(WithDerivedChainB.class);
-        Storage<WithDerivedChainC> cStorage = getRepository().storageFor(WithDerivedChainC.class);
-        Storage<WithDerivedChainD> dStorage = getRepository().storageFor(WithDerivedChainD.class);
+        test_derivedJoinIndex(getRepository());
+    }
+
+    protected void test_derivedJoinIndex(Repository repo) throws Exception {
+        Storage<WithDerivedChainA> aStorage = repo.storageFor(WithDerivedChainA.class);
+        Storage<WithDerivedChainB> bStorage = repo.storageFor(WithDerivedChainB.class);
+        Storage<WithDerivedChainC> cStorage = repo.storageFor(WithDerivedChainC.class);
+        Storage<WithDerivedChainD> dStorage = repo.storageFor(WithDerivedChainD.class);
 
         int aid = 101;
         int bid = 201;
