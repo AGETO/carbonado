@@ -31,9 +31,11 @@ public abstract class WithFunctionIndex implements Storable {
     public abstract int getID();
     public abstract void setID(int id);
 
+    @Alias("THE_SUM")
     public abstract int getSum();
     public abstract void setSum(int sum);
 
+    @Alias("THE_COUNT")
     public abstract int getCount();
     public abstract void setCount(int count);
 
