@@ -48,10 +48,15 @@ public class TestIndexRepair extends TestCase {
         super(name);
     }
 
+    private static Repository buildTempRepository() throws Exception {
+        return TestUtilities.buildTempRepository("indexrepair", 1000000, true);
+    }
+
     public void test_shouldInsert() throws Exception {
-        Repository repo = TestUtilities.buildTempRepository();
+        Repository repo = buildTempRepository();
         test_shouldInsert(repo);
         repo.close();
+        repo = null;
     }
 
     public void test_shouldInsertMap() throws Exception {
@@ -100,12 +105,16 @@ public class TestIndexRepair extends TestCase {
         final long reCount = sumCounts(reCounts);
 
         assertEquals(correctCount * 4, reCount);
+
+        // Cleanup to workaround apparent BDB-JE memory leaks.
+        storage.truncate();
     }
 
     public void test_shouldDelete() throws Exception {
-        Repository repo = TestUtilities.buildTempRepository();
+        Repository repo = buildTempRepository();
         test_shouldDelete(repo);
         repo.close();
+        repo = null;
     }
 
     public void test_shouldDeleteMap() throws Exception {
@@ -166,12 +175,16 @@ public class TestIndexRepair extends TestCase {
         final long reCount = sumCounts(reCounts);
 
         assertEquals(newCount * 4, reCount);
+
+        // Cleanup to workaround apparent BDB-JE memory leaks.
+        storage.truncate();
     }
 
     public void test_shouldUpdate() throws Exception {
-        Repository repo = TestUtilities.buildTempRepository();
+        Repository repo = buildTempRepository();
         test_shouldUpdate(repo);
         repo.close();
+        repo = null;
     }
 
     public void test_shouldUpdateMap() throws Exception {
@@ -241,6 +254,131 @@ public class TestIndexRepair extends TestCase {
             storage.query("stringProp >= ? & doubleProp >= ?").with("").with(0).fetch().toList();
 
         assertEquals(correctCount, list.size());
+
+        // Cleanup to workaround apparent BDB-JE memory leaks.
+        storage.truncate();
+    }
+
+    public void test_multiple() throws Exception {
+        Repository repo = buildTempRepository();
+        test_multiple(repo);
+        repo.close();
+        repo = null;
+    }
+
+    public void test_multipleMap() throws Exception {
+        test_multiple(MapRepositoryBuilder.newRepository());
+    }
+
+    private void test_multiple(Repository repo) throws Exception {
+        // Test multiple index errors.
+
+        Storage<StorableTestBasicCompoundIndexed> storage =
+            repo.storageFor(StorableTestBasicCompoundIndexed.class);
+
+        final long correctCount = insertRecords(storage);
+
+        IndexEntryAccessCapability cap = 
+            repo.getCapability(IndexEntryAccessCapability.class);
+
+        Random rnd = new Random(545321638);
+
+        List<Storable> toDelete = new ArrayList<Storable>();
+
+        for (IndexEntryAccessor<StorableTestBasicCompoundIndexed> acc
+                 : cap.getIndexEntryAccessors(StorableTestBasicCompoundIndexed.class)) {
+            Cursor<? extends Storable> entries = acc.getIndexEntryStorage().query().fetch();
+            while (entries.hasNext()) {
+                Storable entry = entries.next();
+                if (rnd.nextInt(100) == 0) {
+                    toDelete.add(entry);
+                }
+            }
+        }
+
+        for (Storable entry : toDelete) {
+            entry.delete();
+        }
+
+        List<StorableTestBasicCompoundIndexed> toDelete2 =
+            new ArrayList<StorableTestBasicCompoundIndexed>();
+        List<Storable> toAdd = new ArrayList<Storable>();
+
+        for (IndexEntryAccessor<StorableTestBasicCompoundIndexed> acc
+                 : cap.getIndexEntryAccessors(StorableTestBasicCompoundIndexed.class)) {
+            Cursor<? extends Storable> entries = acc.getIndexEntryStorage().query().fetch();
+            while (entries.hasNext()) {
+                Storable entry = entries.next();
+                if (rnd.nextInt(100) == 0) {
+                    StorableTestBasicCompoundIndexed master = storage.prepare();
+                    acc.copyToMasterPrimaryKey(entry, master);
+                    toDelete2.add(master);
+                    toAdd.add(entry);
+                }
+            }
+        }
+
+        long newCount = correctCount;
+
+        for (StorableTestBasicCompoundIndexed master : toDelete2) {
+            if (master.tryDelete()) {
+                newCount--;
+            }
+        }
+
+        for (Storable entry : toAdd) {
+            entry.insert();
+        }
+
+        List<Storable> toUpdate = new ArrayList<Storable>();
+
+        for (IndexEntryAccessor<StorableTestBasicCompoundIndexed> acc
+                 : cap.getIndexEntryAccessors(StorableTestBasicCompoundIndexed.class)) {
+
+            // Only muck with alternate key.
+            String[] names = acc.getPropertyNames();
+            if ("id".equals(names[names.length - 1])) {
+                continue;
+            }
+
+            Cursor<? extends Storable> entries = acc.getIndexEntryStorage().query().fetch();
+            while (entries.hasNext()) {
+                Storable entry = entries.next();
+                if (rnd.nextInt(100) == 0) {
+                    toUpdate.add(entry);
+                }
+            }
+        }
+
+        // Make index entries point to master ids that won't match.
+        for (Storable entry : toUpdate) {
+            Integer id = (Integer) entry.getPropertyValue("id");
+            entry.setPropertyValue("id", id + 100000000);
+            entry.update();
+        }
+
+        final long[] brokenCounts = indexCounts(storage);
+        final long brokenCount = sumCounts(brokenCounts);
+
+        assertFalse(newCount * 4 == brokenCount);
+
+        for (IndexEntryAccessor<StorableTestBasicCompoundIndexed> acc
+                 : cap.getIndexEntryAccessors(StorableTestBasicCompoundIndexed.class)) {
+            acc.repair(1.0);
+        }
+
+        final long[] reCounts = indexCounts(storage);
+        final long reCount = sumCounts(reCounts);
+
+        assertEquals(newCount * 4, reCount);
+
+        List<StorableTestBasicCompoundIndexed> list =
+            storage.query("stringProp >= ? & doubleProp >= ?").with("").with(0).fetch().toList();
+
+        assertEquals(newCount, list.size());
+
+        // Cleanup to workaround apparent BDB-JE memory leaks.
+        storage.truncate();
     }
 
     private long insertRecords(Storage<StorableTestBasicCompoundIndexed> storage)
