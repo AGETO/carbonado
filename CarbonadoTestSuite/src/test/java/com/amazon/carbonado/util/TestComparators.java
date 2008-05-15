@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.amazon.carbonado.cursor;
+package com.amazon.carbonado.util;
 
 import java.util.Arrays;
 import java.util.Comparator;
