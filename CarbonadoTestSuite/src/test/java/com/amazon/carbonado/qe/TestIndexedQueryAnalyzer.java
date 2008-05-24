@@ -208,6 +208,33 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         assertEquals("order.address", result.getForeignProperty().toString());
     }
 
+    public void testChainedOuterJoin() throws Exception {
+        IndexedQueryAnalyzer iqa = new IndexedQueryAnalyzer(Shipment.class, RepoAccess.INSTANCE);
+        Filter<Shipment> filter = Filter.filterFor
+            (Shipment.class, "(order).address.addressState = ?");
+        filter = filter.bind();
+        IndexedQueryAnalyzer.Result result = iqa.analyze(filter, null, null);
+
+        assertFalse(result.handlesAnything());
+        assertEquals(filter, result.getCompositeScore().getFilteringScore().getRemainderFilter());
+
+        filter = Filter.filterFor
+            (Shipment.class, "order.(address).addressState = ?");
+        filter = filter.bind();
+        result = iqa.analyze(filter, null, null);
+
+        assertFalse(result.handlesAnything());
+        assertEquals(filter, result.getCompositeScore().getFilteringScore().getRemainderFilter());
+
+        filter = Filter.filterFor
+            (Shipment.class, "(order).(address).addressState = ?");
+        filter = filter.bind();
+        result = iqa.analyze(filter, null, null);
+
+        assertFalse(result.handlesAnything());
+        assertEquals(filter, result.getCompositeScore().getFilteringScore().getRemainderFilter());
+    }
+
     public void testChainedJoinExecutor() throws Exception {
         IndexedQueryAnalyzer<Shipment> iqa =
             new IndexedQueryAnalyzer<Shipment>(Shipment.class, RepoAccess.INSTANCE);
