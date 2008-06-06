@@ -19,6 +19,8 @@
 package com.amazon.carbonado.repo.replicated;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -30,6 +32,7 @@ import com.amazon.carbonado.OptimisticLockException;
 import com.amazon.carbonado.PersistException;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryBuilder;
+import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.Storage;
 import com.amazon.carbonado.Trigger;
 import com.amazon.carbonado.UniqueConstraintException;
@@ -545,5 +548,110 @@ public class TestRepair extends TestCase {
             }
             assertEquals(count, actual);
         }
+    }
+
+    public void testResyncListener() throws Exception {
+        // Insert an entry into master.
+        {
+            Storage<StorableTestBasic> storage = mMaster.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(1);
+            stb.setStringProp("hello");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+
+        // Insert an entry into replica.
+        {
+            Storage<StorableTestBasic> storage = mReplica.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(2);
+            stb.setStringProp("world");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+
+        // Insert conflicting entries into master and replica.
+        {
+            Storage<StorableTestBasic> storage = mMaster.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(3);
+            stb.setStringProp("foo");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+        {
+            Storage<StorableTestBasic> storage = mReplica.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(3);
+            stb.setStringProp("bar");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+
+        // Insert matching entries into master and replica.
+        {
+            Storage<StorableTestBasic> storage = mMaster.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(4);
+            stb.setStringProp("good");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+        {
+            Storage<StorableTestBasic> storage = mReplica.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(4);
+            stb.setStringProp("good");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+
+        final List<Storable> inserted = new ArrayList<Storable>();
+        final List<Storable[]> updated = new ArrayList<Storable[]>();
+        final List<Storable> deleted = new ArrayList<Storable>();
+
+        ResyncCapability.Listener<Storable> listener = new ResyncCapability.Listener<Storable>() {
+            public void inserted(Storable newStorable) {
+                inserted.add(newStorable);
+            }
+
+            public void updated(Storable oldStorable, Storable newStorable) {
+                updated.add(new Storable[] {oldStorable, newStorable});
+            }
+
+            public void deleted(Storable oldStorable) {
+                deleted.add(oldStorable);
+            }
+        };
+
+        ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
+        cap.resync(StorableTestBasic.class, listener, 1.0, null);
+        
+        assertEquals(1, inserted.size());
+        assertEquals(1, ((StorableTestBasic) inserted.get(0)).getId());
+        assertEquals("hello", ((StorableTestBasic) inserted.get(0)).getStringProp());
+
+        assertEquals(1, updated.size());
+        assertEquals(3, ((StorableTestBasic) (updated.get(0)[0])).getId());
+        assertEquals("bar", ((StorableTestBasic) (updated.get(0)[0])).getStringProp());
+        assertEquals(3, ((StorableTestBasic) (updated.get(0)[1])).getId());
+        assertEquals("foo", ((StorableTestBasic) (updated.get(0)[1])).getStringProp());
+
+        assertEquals(1, deleted.size());
+        assertEquals(2, ((StorableTestBasic) deleted.get(0)).getId());
+        assertEquals("world", ((StorableTestBasic) deleted.get(0)).getStringProp());
     }
 }
