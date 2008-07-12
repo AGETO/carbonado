@@ -339,6 +339,8 @@ public class TestUnionQueryAnalyzer extends TestCase {
         assertEquals(0, res_0.getRemainderOrdering().size());
         assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ? | shipperID = ?").bind(),
                      res_0.getRemainderFilter());
+        assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ? | shipperID = ?").bind(),
+                     res_0.getFilter());
     }
 
     public void testFullScanFallback() throws Exception {
@@ -361,6 +363,36 @@ public class TestUnionQueryAnalyzer extends TestCase {
         assertEquals(0, res_0.getRemainderOrdering().size());
         assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ? | orderID = ?").bind(),
                      res_0.getRemainderFilter());
+        assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ? | orderID = ?").bind(),
+                     res_0.getFilter());
+    }
+
+    public void testFullScanNoDNF() throws Exception {
+        // Because no indexes were selected, there's no union to perform. Make
+        // sure original filter is used and not intermediate DNF.
+        UnionQueryAnalyzer uqa =
+            new UnionQueryAnalyzer(Shipment.class, TestIndexedQueryAnalyzer.RepoAccess.INSTANCE);
+        Filter<Shipment> filter = Filter.filterFor
+            (Shipment.class, "(shipmentNotes = ? | shipperID = ?) & shipmentDate = ?");
+        filter = filter.bind();
+        UnionQueryAnalyzer.Result result = uqa.analyze(filter, null, null);
+        List<IndexedQueryAnalyzer<Shipment>.Result> subResults = result.getSubResults();
+
+        assertEquals(1, subResults.size());
+        IndexedQueryAnalyzer<Shipment>.Result res_0 = subResults.get(0);
+
+        assertFalse(res_0.handlesAnything());
+        assertEquals(null, res_0.getForeignIndex());
+        assertEquals(null, res_0.getForeignProperty());
+        assertEquals(0, res_0.getRemainderOrdering().size());
+        assertEquals(Filter.filterFor
+                     (Shipment.class,
+                      "(shipmentNotes = ? | shipperID = ?) & shipmentDate = ?").bind(),
+                     res_0.getRemainderFilter());
+        assertEquals(Filter.filterFor
+                     (Shipment.class,
+                      "(shipmentNotes = ? | shipperID = ?) & shipmentDate = ?").bind(),
+                     res_0.getFilter());
     }
 
     public void testFullScanExempt() throws Exception {
@@ -386,6 +418,8 @@ public class TestUnionQueryAnalyzer extends TestCase {
         assertEquals("+shipmentID", res_0.getRemainderOrdering().get(0).toString());
         assertEquals(Filter.filterFor(Shipment.class, "order.orderTotal > ?").bind(),
                      res_0.getRemainderFilter());
+        assertEquals(Filter.filterFor(Shipment.class, "orderID = ? & order.orderTotal > ?").bind(),
+                     res_0.getFilter());
 
         assertTrue(res_1.handlesAnything());
         assertEquals(makeIndex(Shipment.class, "shipmentID"), res_1.getLocalIndex());
@@ -394,7 +428,8 @@ public class TestUnionQueryAnalyzer extends TestCase {
         assertEquals(0, res_1.getRemainderOrdering().size());
         assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ?").bind(),
                      res_1.getRemainderFilter());
-
+        assertEquals(Filter.filterFor(Shipment.class, "shipmentNotes = ?").bind(),
+                     res_1.getFilter());
     }
 
     public void testComplexUnionPlan() throws Exception {
