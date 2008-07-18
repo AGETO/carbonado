@@ -30,7 +30,7 @@ import com.sleepycat.db.DbTxn;
 import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.RepositoryException;
 
-import com.amazon.carbonado.spi.TransactionScope;
+import com.amazon.carbonado.txn.TransactionScope;
 
 /**
  * Storage implementation for DBRepository.
