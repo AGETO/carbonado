@@ -18,6 +18,8 @@
 
 package com.amazon.carbonado.raw;
 
+import java.math.BigInteger;
+
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -369,6 +371,70 @@ public class TestKeyEncoding extends TestCase {
             }
             KeyEncoder.encodeDesc(value, bytes, 0);
             assertEquals(value, KeyDecoder.decodeDoubleObjDesc(bytes, 0));
+            if (lastBytes != null) {
+                int sgn = -TestDataEncoding.compare(value, lastValue);
+                assertEquals(sgn, TestDataEncoding.byteArrayCompare(bytes, lastBytes));
+            }
+            lastValue = value;
+            lastBytes = bytes.clone();
+        }
+    }
+
+    public void test_BigInteger() throws Exception {
+        byte[] bytes = new byte[205];
+        BigInteger[] ref = new BigInteger[1];
+
+        BigInteger lastValue = null;
+        byte[] lastBytes = null;
+        for (int i=0; i<LONG_TEST; i++) {
+            BigInteger value;
+            if (mRandom.nextInt(10) == 1) {
+                value = null;
+            } else {
+                int len = mRandom.nextInt(200 * 8);
+                value = new BigInteger(len, mRandom);
+                if (mRandom.nextBoolean()) {
+                    value = value.negate();
+                }
+            }
+
+            int amt = KeyEncoder.calculateEncodedLength(value);
+            assertEquals(amt, KeyEncoder.encode(value, bytes, 0));
+            assertEquals(amt, KeyDecoder.decode(bytes, 0, ref));
+            assertEquals(value, ref[0]);
+
+            if (lastBytes != null) {
+                int sgn = TestDataEncoding.compare(value, lastValue);
+                assertEquals(sgn, TestDataEncoding.byteArrayCompare(bytes, lastBytes));
+            }
+            lastValue = value;
+            lastBytes = bytes.clone();
+        }
+    }
+
+    public void test_BigIntegerDesc() throws Exception {
+        byte[] bytes = new byte[205];
+        BigInteger[] ref = new BigInteger[1];
+
+        BigInteger lastValue = null;
+        byte[] lastBytes = null;
+        for (int i=0; i<LONG_TEST; i++) {
+            BigInteger value;
+            if (mRandom.nextInt(10) == 1) {
+                value = null;
+            } else {
+                int len = mRandom.nextInt(200 * 8);
+                value = new BigInteger(len, mRandom);
+                if (mRandom.nextBoolean()) {
+                    value = value.negate();
+                }
+            }
+
+            int amt = KeyEncoder.calculateEncodedLength(value);
+            assertEquals(amt, KeyEncoder.encodeDesc(value, bytes, 0));
+            assertEquals(amt, KeyDecoder.decodeDesc(bytes, 0, ref));
+            assertEquals(value, ref[0]);
+
             if (lastBytes != null) {
                 int sgn = -TestDataEncoding.compare(value, lastValue);
                 assertEquals(sgn, TestDataEncoding.byteArrayCompare(bytes, lastBytes));

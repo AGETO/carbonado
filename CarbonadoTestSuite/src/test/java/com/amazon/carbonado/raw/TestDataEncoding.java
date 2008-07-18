@@ -18,6 +18,8 @@
 
 package com.amazon.carbonado.raw;
 
+import java.math.BigInteger;
+
 import java.util.Random;
 
 import junit.framework.TestCase;
@@ -460,6 +462,28 @@ public class TestDataEncoding extends TestCase {
             }
             lastValue = value;
             lastBytes = bytes.clone();
+        }
+    }
+
+    public void test_BigInteger() throws Exception {
+        byte[] bytes = new byte[101];
+
+        assertEquals(1, DataEncoder.encode((BigInteger) null, bytes, 0));
+        BigInteger[] ref = new BigInteger[1];
+        ref[0] = BigInteger.ONE;
+        assertEquals(1, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(null, ref[0]);
+
+        for (int i=0; i<SHORT_TEST; i++) {
+            int len = mRandom.nextInt(100 * 8);
+            BigInteger value = new BigInteger(len, mRandom);
+            if (mRandom.nextBoolean()) {
+                value = value.negate();
+            }
+            int amt = DataEncoder.calculateEncodedLength(value);
+            assertEquals(amt, DataEncoder.encode(value, bytes, 0));
+            assertEquals(amt, DataDecoder.decode(bytes, 0, ref));
+            assertEquals(value, ref[0]);
         }
     }
 
