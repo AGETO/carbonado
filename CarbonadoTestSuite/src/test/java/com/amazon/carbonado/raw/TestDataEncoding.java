@@ -19,6 +19,7 @@
 package com.amazon.carbonado.raw;
 
 import java.math.BigInteger;
+import java.math.BigDecimal;
 
 import java.util.Random;
 
@@ -36,8 +37,8 @@ import junit.framework.TestSuite;
  */
 public class TestDataEncoding extends TestCase {
     private static final int SHORT_TEST = 100;
-    private static final int MEDIUM_TEST = 500;
-    private static final int LONG_TEST = 1000;
+    private static final int MEDIUM_TEST = 1000;
+    private static final int LONG_TEST = 10000;
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
@@ -466,20 +467,76 @@ public class TestDataEncoding extends TestCase {
     }
 
     public void test_BigInteger() throws Exception {
-        byte[] bytes = new byte[101];
+        byte[] bytes = new byte[1 + 100];
+        BigInteger[] ref = new BigInteger[1];
 
         assertEquals(1, DataEncoder.encode((BigInteger) null, bytes, 0));
-        BigInteger[] ref = new BigInteger[1];
         ref[0] = BigInteger.ONE;
         assertEquals(1, DataDecoder.decode(bytes, 0, ref));
         assertEquals(null, ref[0]);
 
-        for (int i=0; i<SHORT_TEST; i++) {
+        assertEquals(2, DataEncoder.encode(BigInteger.ZERO, bytes, 0));
+        ref[0] = BigInteger.ONE;
+        assertEquals(2, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigInteger.ZERO, ref[0]);
+
+        assertEquals(2, DataEncoder.encode(BigInteger.ONE, bytes, 0));
+        ref[0] = BigInteger.ZERO;
+        assertEquals(2, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigInteger.ONE, ref[0]);
+
+        assertEquals(2, DataEncoder.encode(BigInteger.ONE.negate(), bytes, 0));
+        ref[0] = BigInteger.ZERO;
+        assertEquals(2, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigInteger.ONE.negate(), ref[0]);
+
+        for (int i=0; i<LONG_TEST; i++) {
             int len = mRandom.nextInt(100 * 8);
             BigInteger value = new BigInteger(len, mRandom);
             if (mRandom.nextBoolean()) {
                 value = value.negate();
             }
+            int amt = DataEncoder.calculateEncodedLength(value);
+            assertEquals(amt, DataEncoder.encode(value, bytes, 0));
+            assertEquals(amt, DataDecoder.decode(bytes, 0, ref));
+            assertEquals(value, ref[0]);
+        }
+    }
+
+    public void test_BigDecimal() throws Exception {
+        byte[] bytes = new byte[5 + 1 + 100];
+        BigDecimal[] ref = new BigDecimal[1];
+
+        assertEquals(1, DataEncoder.encode((BigDecimal) null, bytes, 0));
+        ref[0] = BigDecimal.ONE;
+        assertEquals(1, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(null, ref[0]);
+
+        assertEquals(3, DataEncoder.encode(BigDecimal.ZERO, bytes, 0));
+        ref[0] = BigDecimal.ONE;
+        assertEquals(3, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigDecimal.ZERO, ref[0]);
+
+        assertEquals(3, DataEncoder.encode(BigDecimal.ONE, bytes, 0));
+        ref[0] = BigDecimal.ZERO;
+        assertEquals(3, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigDecimal.ONE, ref[0]);
+
+        assertEquals(3, DataEncoder.encode(BigDecimal.ONE.negate(), bytes, 0));
+        ref[0] = BigDecimal.ZERO;
+        assertEquals(3, DataDecoder.decode(bytes, 0, ref));
+        assertEquals(BigDecimal.ONE.negate(), ref[0]);
+
+        for (int i=0; i<LONG_TEST; i++) {
+            int len = mRandom.nextInt(100 * 8);
+            BigInteger unscaled = new BigInteger(len, mRandom);
+            if (mRandom.nextBoolean()) {
+                unscaled = unscaled.negate();
+            }
+            int scale = mRandom.nextInt();
+
+            BigDecimal value = new BigDecimal(unscaled, scale);
+
             int amt = DataEncoder.calculateEncodedLength(value);
             assertEquals(amt, DataEncoder.encode(value, bytes, 0));
             assertEquals(amt, DataDecoder.decode(bytes, 0, ref));
