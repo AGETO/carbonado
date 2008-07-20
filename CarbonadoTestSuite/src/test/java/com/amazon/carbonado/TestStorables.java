@@ -18,6 +18,9 @@
 
 package com.amazon.carbonado;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
@@ -3011,6 +3014,78 @@ public class TestStorables extends TestCase {
         assertFalse(c.hasNext());
         c.close();
         */
+    }
+
+    public void test_BigInteger() throws Exception {
+        Storage<WithBigInteger> storage = getRepository().storageFor(WithBigInteger.class);
+
+        WithBigInteger s = storage.prepare();
+        s.setId(1);
+        BigInteger bi = new BigInteger("123456789012345678901234567890");
+        s.setNumber(bi);
+        s.insert();
+
+        s = storage.prepare();
+        s.setId(1);
+        s.load();
+        assertEquals(bi, s.getNumber());
+
+        s = storage.prepare();
+        s.setId(2);
+        s.setNumber(null);
+        s.insert();
+
+        s.load();
+        assertEquals(null, s.getNumber());
+
+        Query<WithBigInteger> query = storage.query("number = ?");
+
+        s = query.with(null).loadOne();
+        assertEquals(2, s.getId());
+        assertEquals(null, s.getNumber());
+
+        s = query.with(bi).loadOne();
+        assertEquals(1, s.getId());
+        assertEquals(bi, s.getNumber());
+
+        s = query.with(BigInteger.ZERO).tryLoadOne();
+        assertEquals(null, s);
+    }
+
+    public void test_BigDecimal() throws Exception {
+        Storage<WithBigDecimal> storage = getRepository().storageFor(WithBigDecimal.class);
+
+        WithBigDecimal s = storage.prepare();
+        s.setId(1);
+        BigDecimal bd = new BigDecimal("12345678901234567890.1234567890");
+        s.setNumber(bd);
+        s.insert();
+
+        s = storage.prepare();
+        s.setId(1);
+        s.load();
+        assertEquals(bd, s.getNumber());
+
+        s = storage.prepare();
+        s.setId(2);
+        s.setNumber(null);
+        s.insert();
+
+        s.load();
+        assertEquals(null, s.getNumber());
+
+        Query<WithBigDecimal> query = storage.query("number = ?");
+
+        s = query.with(null).loadOne();
+        assertEquals(2, s.getId());
+        assertEquals(null, s.getNumber());
+
+        s = query.with(bd).loadOne();
+        assertEquals(1, s.getId());
+        assertEquals(bd, s.getNumber());
+
+        s = query.with(BigDecimal.ZERO).tryLoadOne();
+        assertEquals(null, s);
     }
 
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {
