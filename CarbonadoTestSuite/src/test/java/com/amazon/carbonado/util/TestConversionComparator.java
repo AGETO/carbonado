@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.amazon.carbonado.info;
+package com.amazon.carbonado.util;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
