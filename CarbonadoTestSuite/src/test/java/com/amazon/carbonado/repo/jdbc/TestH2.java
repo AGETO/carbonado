@@ -18,6 +18,9 @@
 
 package com.amazon.carbonado.repo.jdbc;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import java.io.*;
 
 import java.sql.DriverManager;
@@ -341,7 +344,18 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
 
     @Override
     public void test_insertLobBig() throws Exception {
-	// Not a useful test.
+        // Not a useful test.
+    }
+
+    @Override
+    protected BigInteger expected(BigInteger bi) {
+        // Used to detect that BigIntegerAdapter was selected.
+        return bi.add(BigInteger.ONE);
+    }
+
+    @Override
+    protected BigDecimal expected(BigDecimal bd) {
+        return bd;
     }
 
     private RepositoryBuilder jdbcBuilder(boolean isMaster) throws RepositoryException {

@@ -3022,13 +3022,14 @@ public class TestStorables extends TestCase {
         WithBigInteger s = storage.prepare();
         s.setId(1);
         BigInteger bi = new BigInteger("123456789012345678901234567890");
+        BigInteger expected = expected(bi);
         s.setNumber(bi);
         s.insert();
 
         s = storage.prepare();
         s.setId(1);
         s.load();
-        assertEquals(bi, s.getNumber());
+        assertEquals(expected, s.getNumber());
 
         s = storage.prepare();
         s.setId(2);
@@ -3046,7 +3047,7 @@ public class TestStorables extends TestCase {
 
         s = query.with(bi).loadOne();
         assertEquals(1, s.getId());
-        assertEquals(bi, s.getNumber());
+        assertEquals(expected, s.getNumber());
 
         s = query.with(BigInteger.ZERO).tryLoadOne();
         assertEquals(null, s);
@@ -3057,15 +3058,19 @@ public class TestStorables extends TestCase {
         s.insert();
 
         s = query.with(BigInteger.ONE).loadOne();
-        assertEquals(BigInteger.ONE, s.getNumber());
+        assertEquals(expected(BigInteger.ONE), s.getNumber());
 
         s = query.with(1).loadOne();
-        assertEquals(BigInteger.ONE, s.getNumber());
+        assertEquals(expected(BigInteger.ONE), s.getNumber());
+    }
+
+    protected BigInteger expected(BigInteger bi) {
+        return bi;
     }
 
     public void test_BigDecimal() throws Exception {
         BigDecimal bd = new BigDecimal("12345678901234567890.1234567890");
-        BigDecimal normalized = expectedNormalization(bd);
+        BigDecimal expected = expected(bd);
 
         Storage<WithBigDecimal> storage = getRepository().storageFor(WithBigDecimal.class);
 
@@ -3075,12 +3080,12 @@ public class TestStorables extends TestCase {
         s.insert();
 
         // Ensure insert behaves as if Storable was reloaded.
-        assertEquals(normalized, s.getNumber());
+        assertEquals(expected, s.getNumber());
 
         s = storage.prepare();
         s.setId(1);
         s.load();
-        assertEquals(normalized, s.getNumber());
+        assertEquals(expected, s.getNumber());
 
         {
             s = storage.prepare();
@@ -3108,10 +3113,10 @@ public class TestStorables extends TestCase {
 
         s = query.with(bd).loadOne();
         assertEquals(1, s.getId());
-        assertEquals(normalized, s.getNumber());
+        assertEquals(expected, s.getNumber());
 
         BigDecimal bd2 = new BigDecimal("123.0");
-        BigDecimal nm2 = expectedNormalization(bd2);
+        BigDecimal nm2 = expected(bd2);
 
         s.setNumber(bd2);
         s.update();
@@ -3147,7 +3152,7 @@ public class TestStorables extends TestCase {
         assertEquals(BigDecimal.ONE, s.getNumber());
     }
 
-    protected BigDecimal expectedNormalization(BigDecimal bd) {
+    protected BigDecimal expected(BigDecimal bd) {
         return bd.stripTrailingZeros();
     }
 

@@ -34,6 +34,7 @@ public interface WithBigInteger extends Storable {
     void setId(int id);
 
     @Nullable
+    @BigIntegerAdapter
     BigInteger getNumber();
     void setNumber(BigInteger number);
 }

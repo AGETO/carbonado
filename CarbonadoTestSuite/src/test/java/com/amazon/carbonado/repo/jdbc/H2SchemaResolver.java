@@ -18,6 +18,9 @@
 
 package com.amazon.carbonado.repo.jdbc;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +118,8 @@ public class H2SchemaResolver implements SchemaResolver {
                 typeName = "BLOB";
             } else if (type == Clob.class) {
                 typeName = "CLOB";
+            } else if (type == BigDecimal.class || type == BigInteger.class) {
+                typeName = "NUMBER";
             } else {
                 return false;
             }
