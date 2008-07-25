@@ -3156,6 +3156,30 @@ public class TestStorables extends TestCase {
         return bd.stripTrailingZeros();
     }
 
+    public void test_BigDecimalCompare() throws Exception {
+        BigDecimal bd1 = new BigDecimal("123.0");
+        BigDecimal bd2 = new BigDecimal("123");
+        BigDecimal bd3 = new BigDecimal("-123");
+
+        Storage<WithBigDecimal> storage = getRepository().storageFor(WithBigDecimal.class);
+
+        WithBigDecimal s1 = storage.prepare();
+        s1.setId(1);
+        s1.setNumber(bd1);
+
+        WithBigDecimal s2 = storage.prepare();
+        s2.setId(1);
+        s2.setNumber(bd2);
+
+        WithBigDecimal s3 = storage.prepare();
+        s3.setId(1);
+        s3.setNumber(bd3);
+
+        assertTrue(s1.equals(s2));
+        assertFalse(s2.equals(s3));
+        assertFalse(s1.equals(s3));
+    }
+
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {
         for (String property : properties) {
             assertEquals(expected, storable.isPropertyUninitialized(property));
