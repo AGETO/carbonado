@@ -3156,6 +3156,46 @@ public class TestStorables extends TestCase {
         return bd.stripTrailingZeros();
     }
 
+    public void test_BigDecimalVersioned() throws Exception {
+        BigDecimal bd = new BigDecimal("123.000");
+        BigDecimal expected = expected(bd);
+
+        Storage<WithBigDecimalVersioned> storage =
+            getRepository().storageFor(WithBigDecimalVersioned.class);
+
+        WithBigDecimalVersioned s = storage.prepare();
+        s.setId(1);
+        s.setNumber(bd);
+        s.insert();
+
+        // Ensure insert behaves as if Storable was reloaded.
+        assertEquals(expected, s.getNumber());
+
+        int version = s.getVersion();
+
+        bd = new BigDecimal("200.000");
+        expected = expected(bd);
+
+        s = storage.prepare();
+        s.setId(1);
+        s.setNumber(bd);
+        s.setVersion(version - 1);
+        try {
+            s.update();
+            fail();
+        } catch (OptimisticLockException e) {
+        }
+
+        // Since no update actually happened, scale should stay the same.
+        assertEquals(bd, s.getNumber());
+
+        s.setVersion(version);
+        s.update();
+
+        // Now side-effect should be visble.
+        assertEquals(expected, s.getNumber());
+    }
+
     public void test_BigDecimalCompare() throws Exception {
         BigDecimal bd1 = new BigDecimal("123.0");
         BigDecimal bd2 = new BigDecimal("123");
