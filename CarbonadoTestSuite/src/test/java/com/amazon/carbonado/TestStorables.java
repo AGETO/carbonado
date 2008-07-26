@@ -29,6 +29,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -3194,6 +3196,88 @@ public class TestStorables extends TestCase {
 
         // Now side-effect should be visble.
         assertEquals(expected, s.getNumber());
+    }
+
+    public void test_BigDecimalPk() throws Exception {
+        Storage<WithBigDecimalPk> storage =
+            getRepository().storageFor(WithBigDecimalPk.class);
+
+        WithBigDecimalPk s = storage.prepare();
+        s.setId(new BigDecimal("000.0000"));
+        s.setData("a");
+        s.insert();
+
+        s = storage.prepare();
+        s.setId(BigDecimal.ZERO);
+        s.setData("b");
+        assertFalse(s.tryInsert());
+
+        s = storage.prepare();
+        s.setId(new BigDecimal("0.00"));
+        s.load();
+        assertEquals("a", s.getData());
+
+        String[] strKeys = {
+            "1", "10", "100", "100.0", "345001.000001", "10.0", "10.1", "10.01", "10.001",
+            "00000.1", "0.01", "0.02", "0.019999999999999999", "99999999999999999"
+        };
+
+        BigDecimal[] keys = new BigDecimal[strKeys.length * 2];
+        for (int i=0; i<strKeys.length; i++) {
+            keys[i] = new BigDecimal(strKeys[i]);
+            keys[i + strKeys.length] = keys[i].negate();
+        }
+
+        SortedMap<BigDecimal, BigDecimal> allowed = new TreeMap<BigDecimal, BigDecimal>();
+        allowed.put(BigDecimal.ZERO, BigDecimal.ZERO);
+        for (BigDecimal key : keys) {
+            if (!allowed.containsKey(key)) {
+                allowed.put(key, key);
+            }
+        }
+
+        for (BigDecimal key : keys) {
+            s = storage.prepare();
+            s.setId(key);
+            s.setData(key.toString());
+            if (s.tryInsert()) {
+                assertTrue(allowed.containsKey(key));
+            } else {
+                if (allowed.containsKey(key)) {
+                    BigDecimal bd = allowed.get(key);
+                    assertFalse(key.equals(bd));
+                }
+            }
+        }
+
+        long count = storage.query().count();
+        assertEquals(allowed.size(), count);
+
+        Cursor<WithBigDecimalPk> cursor = storage.query().orderBy("id").fetch();
+        WithBigDecimalPk last = null;
+        while (cursor.hasNext()) {
+            s = cursor.next();
+            if (last != null) {
+                assertTrue(s.getId().compareTo(last.getId()) > 0);
+            }
+            last = s;
+        }
+
+        cursor = storage.query("id >= ? & id < ?").with(-1).with(100).fetch();
+        count = 0;
+        while (cursor.hasNext()) {
+            s = cursor.next();
+            assertTrue(s.getId().compareTo(new BigDecimal("-1")) >= 0);
+            assertTrue(s.getId().compareTo(new BigDecimal("100")) < 0);
+            count++;
+        }
+
+        assertTrue(count > 0);
+
+        SortedMap<BigDecimal, BigDecimal> subMap =
+            allowed.subMap(new BigDecimal("-1"), new BigDecimal("100"));
+
+        assertEquals(subMap.size(), count);
     }
 
     public void test_BigDecimalCompare() throws Exception {
