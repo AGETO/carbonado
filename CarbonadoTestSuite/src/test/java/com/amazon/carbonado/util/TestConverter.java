@@ -52,7 +52,6 @@ public class TestConverter extends TestCase {
         Converter c = Converter.build(Converter.class);
         test_primitive(c);
         Converter c2 = Converter.build(Converter.class);
-        assertTrue(c == c2);
     }
 
     public void test_illegalPrimitive() {
@@ -60,14 +59,33 @@ public class TestConverter extends TestCase {
         test_illegalPrimitive(c);
     }
 
-    public abstract static class Custom1 extends Converter {
+    public abstract static class ReplaceInt extends Converter {
         public int convertToInt(int value) {
             return value + 1;
         }
-    };
+    }
 
     public void test_primitiveReplace() {
-        Custom1 c = Converter.build(Custom1.class);
+        ReplaceInt c = Converter.build(ReplaceInt.class);
+        test_illegalPrimitive(c);
+
+        {
+            Integer value = c.convert((byte) 5, int.class);
+            assertEquals(6, value.intValue());
+        }
+        {
+            Integer value = c.convert((byte) 5, Integer.class);
+            assertEquals(6, value.intValue());
+        }
+        {
+            Integer value = c.convert(new Byte((byte) 5), int.class);
+            assertEquals(6, value.intValue());
+        }
+        {
+            Integer value = c.convert(new Byte((byte) 5), Integer.class);
+            assertEquals(6, value.intValue());
+        }
+
         {
             Integer value = c.convert(5, int.class);
             assertEquals(6, value.intValue());
@@ -77,6 +95,15 @@ public class TestConverter extends TestCase {
             assertEquals(6, value.intValue());
         }
         {
+            Integer value = c.convert(new Integer(5), int.class);
+            assertEquals(6, value.intValue());
+        }
+        {
+            Integer value = c.convert(new Integer(5), Integer.class);
+            assertEquals(6, value.intValue());
+        }
+
+        {
             Long value = c.convert(5, long.class);
             assertEquals(5, value.longValue());
         }
@@ -84,6 +111,112 @@ public class TestConverter extends TestCase {
             Long value = c.convert(5, Long.class);
             assertEquals(5, value.longValue());
         }
+        {
+            Long value = c.convert(new Long(5), long.class);
+            assertEquals(5, value.longValue());
+        }
+        {
+            Long value = c.convert(new Long(5), Long.class);
+            assertEquals(5, value.longValue());
+        }
+    }
+
+    public abstract static class ConvertBig extends Converter {
+        public BigInteger convertToBigInteger(long value) {
+            return BigInteger.valueOf(value);
+        }
+
+        public BigDecimal convertToBigDecimal(long value) {
+            return BigDecimal.valueOf(value);
+        }
+
+        public BigDecimal convertToBigDecimal(double value) {
+            return BigDecimal.valueOf(value);
+        }
+    }
+
+    public void test_big() {
+        ConvertBig c = Converter.build(ConvertBig.class);
+        test_primitive(c);
+        test_illegalPrimitive(c);
+
+        {
+            BigInteger big = c.convert(100, BigInteger.class);
+            assertEquals(BigInteger.valueOf(100), big);
+        }
+        {
+            BigInteger big = c.convert(new Integer(100), BigInteger.class);
+            assertEquals(BigInteger.valueOf(100), big);
+        }
+        {
+            BigInteger big = c.convert(null, BigInteger.class);
+            assertEquals(null, big);
+        }
+
+        {
+            BigDecimal big = c.convert(100, BigDecimal.class);
+            assertEquals(BigDecimal.valueOf(100), big);
+        }
+        {
+            BigDecimal big = c.convert(new Integer(100), BigDecimal.class);
+            assertEquals(BigDecimal.valueOf(100), big);
+        }
+        {
+            BigDecimal big = c.convert(null, BigDecimal.class);
+            assertEquals(null, big);
+        }
+
+        {
+            BigDecimal big = c.convert(100.2, BigDecimal.class);
+            assertEquals(BigDecimal.valueOf(100.2), big);
+        }
+        {
+            BigDecimal big = c.convert(new Float(100.2f), BigDecimal.class);
+            assertEquals(BigDecimal.valueOf(100.2f), big);
+        }
+    }
+
+    public abstract static class ConvertArray extends Converter {
+        private final boolean mNegate;
+
+        public ConvertArray(boolean negate) {
+            mNegate = negate;
+        }
+
+        public byte convertToByte(byte value) {
+            if (mNegate) {
+                value = (byte) -value;
+            }
+            return value;
+        }
+
+        public int[] convertToIntArray(byte[] value) {
+            int[] ia = new int[value.length];
+            for (int i=0; i<value.length; i++) {
+                ia[i] = convert(value[i], byte.class);
+            }
+            return ia;
+        }
+    }
+
+    public void test_array() throws Exception {
+        Class<? extends ConvertArray> clazz = Converter.buildClass(ConvertArray.class);
+
+        ConvertArray c = clazz.getConstructor(boolean.class).newInstance(false);
+        test_primitive(c);
+        test_illegalPrimitive(c);
+
+        int[] ia = c.convert(new byte[] {-1, 2}, int[].class);
+        assertEquals(2, ia.length);
+        assertEquals(-1, ia[0]);
+        assertEquals(2, ia[1]);
+
+        c = clazz.getConstructor(boolean.class).newInstance(true);
+
+        ia = c.convert(new byte[] {-1, 2}, int[].class);
+        assertEquals(2, ia.length);
+        assertEquals(1, ia[0]);
+        assertEquals(-2, ia[1]);
     }
 
     private void test_primitive(Converter c) {
@@ -706,6 +839,25 @@ public class TestConverter extends TestCase {
                 assertTrue(obj instanceof Boolean);
                 assertEquals(false, ((Boolean) obj).booleanValue());
                 assertTrue(obj == Boolean.FALSE);
+            }
+        }
+
+        // from null
+        {
+            Class[] types = {
+                byte.class, Byte.class,
+                short.class, Short.class,
+                int.class, Integer.class,
+                long.class, Long.class,
+                float.class, Float.class,
+                double.class, Double.class,
+                char.class, Character.class,
+                boolean.class, Boolean.class,
+            };
+
+            for (Class type : types) {
+                Object obj = c.convert(null, type);
+                assertEquals(null, obj);
             }
         }
     }
