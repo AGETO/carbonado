@@ -503,6 +503,7 @@ public class TestDataEncoding extends TestCase {
         }
     }
 
+    /*
     public void test_BigDecimal() throws Exception {
         byte[] bytes = new byte[5 + 1 + 100];
         BigDecimal[] ref = new BigDecimal[1];
@@ -543,6 +544,7 @@ public class TestDataEncoding extends TestCase {
             assertEquals(value, ref[0]);
         }
     }
+    */
 
     public void test_String() throws Exception {
         String[] ref = new String[1];

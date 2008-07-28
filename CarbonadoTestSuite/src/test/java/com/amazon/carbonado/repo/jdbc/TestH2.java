@@ -353,10 +353,12 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
         return bi.add(BigInteger.ONE);
     }
 
+    /*
     @Override
     protected BigDecimal expected(BigDecimal bd) {
         return bd;
     }
+    */
 
     private RepositoryBuilder jdbcBuilder(boolean isMaster) throws RepositoryException {
         JDBCRepositoryBuilder builder = new JDBCRepositoryBuilder();
