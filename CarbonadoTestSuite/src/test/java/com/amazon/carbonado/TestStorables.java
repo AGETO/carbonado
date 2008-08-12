@@ -1029,6 +1029,46 @@ public class TestStorables extends TestCase {
         repo = null;
     }
 
+    public void test_exists() throws Exception {
+        Storage<StorableTestBasic> storage = getRepository().storageFor(StorableTestBasic.class);
+
+        Query<StorableTestBasic> any = storage.query();
+        Query<StorableTestBasic> find = storage.query("stringProp = ?");
+
+        assertFalse(any.exists());
+        assertFalse(find.with("marco").exists());
+
+        StorableTestBasic s = storage.prepare();
+        s.setId(1);
+        s.setStringProp("marco");
+        s.setIntProp(3);
+        s.setLongProp(4);
+        s.setDoubleProp(5);
+        s.insert();
+
+        assertTrue(any.exists());
+        assertTrue(find.with("marco").exists());
+        assertFalse(find.with("polo").exists());
+
+        s = storage.prepare();
+        s.setId(2);
+        s.setStringProp("polo");
+        s.setIntProp(3);
+        s.setLongProp(4);
+        s.setDoubleProp(5);
+        s.insert();
+
+        assertTrue(any.exists());
+        assertTrue(find.with("marco").exists());
+        assertTrue(find.with("polo").exists());
+
+        any.deleteAll();
+
+        assertFalse(any.exists());
+        assertFalse(find.with("marco").exists());
+        assertFalse(find.with("polo").exists());
+    }
+
     public void test_derivedVersion() throws Exception {
         Storage<WithDerivedVersion> storage = getRepository().storageFor(WithDerivedVersion.class);
 
