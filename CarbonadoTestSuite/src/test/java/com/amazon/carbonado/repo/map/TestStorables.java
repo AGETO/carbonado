@@ -30,6 +30,7 @@ import com.amazon.carbonado.Query;
 import com.amazon.carbonado.Storage;
 
 import com.amazon.carbonado.stored.StorableDateIndex;
+import com.amazon.carbonado.stored.StorableTestBasic;
 
 /**
  *
@@ -85,6 +86,26 @@ public class TestStorables extends com.amazon.carbonado.TestStorables {
         } finally {
             DateTimeZone.setDefault(original);
         }
+    }
+
+    public void test_keyClone() throws Exception {
+        // This test makes sure that map key is properly cloned before being
+        // inserted into map.
+
+        Repository repo = buildRepository(true);
+        Storage<StorableTestBasic> storage = repo.storageFor(StorableTestBasic.class);
+
+        StorableTestBasic s = storage.prepare();
+        s.setId(1);
+        s.setStringProp("a");
+        s.setIntProp(1);
+        s.setLongProp(1L);
+        s.setDoubleProp(1.0);
+        s.insert();
+
+        s.markPropertiesDirty();
+        s.setId(2);
+        s.insert();
     }
 
     @Override
