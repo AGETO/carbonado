@@ -265,6 +265,47 @@ public class TestTransaction extends TestCase {
         assertEquals(0, storage.query().count());
     }
 
+    public void testNestedRollback2() throws Exception {
+        Storage<StorableTestBasic> storage = mRepo.storageFor(StorableTestBasic.class);
+
+        assertEquals(0, storage.query().count());
+
+        Transaction outer = mRepo.enterTransaction();
+
+        {
+            Transaction txn = mRepo.enterTransaction();
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(1);
+            stb.setStringProp("");
+            stb.setIntProp(0);
+            stb.setLongProp(0);
+            stb.setDoubleProp(0);
+            stb.insert();
+ 
+            txn.exit();
+ 
+            assertEquals(0, storage.query().count());
+        }
+
+        {
+            Transaction txn = mRepo.enterTransaction();
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(2);
+            stb.setStringProp("");
+            stb.setIntProp(0);
+            stb.setLongProp(0);
+            stb.setDoubleProp(0);
+            stb.insert();
+ 
+            txn.exit();
+ 
+            assertEquals(0, storage.query().count());
+        }
+
+        outer.commit();
+        outer.exit();
+    }
+
     public void testDeadlock() throws Exception {
         // This test makes sure that transaction locker is not the current
         // thread. Top transactions will deadlock.
