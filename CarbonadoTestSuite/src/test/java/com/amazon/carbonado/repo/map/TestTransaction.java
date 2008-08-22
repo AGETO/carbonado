@@ -273,7 +273,7 @@ public class TestTransaction extends TestCase {
         Transaction outer = mRepo.enterTransaction();
 
         {
-            Transaction txn = mRepo.enterTransaction();
+            Transaction txn = mRepo.enterTransaction(IsolationLevel.READ_COMMITTED);
             StorableTestBasic stb = storage.prepare();
             stb.setId(1);
             stb.setStringProp("");
@@ -282,13 +282,15 @@ public class TestTransaction extends TestCase {
             stb.setDoubleProp(0);
             stb.insert();
  
+            assertEquals(1, storage.query().count());
+
             txn.exit();
- 
+
             assertEquals(0, storage.query().count());
         }
 
         {
-            Transaction txn = mRepo.enterTransaction();
+            Transaction txn = mRepo.enterTransaction(IsolationLevel.READ_COMMITTED);
             StorableTestBasic stb = storage.prepare();
             stb.setId(2);
             stb.setStringProp("");
@@ -297,6 +299,8 @@ public class TestTransaction extends TestCase {
             stb.setDoubleProp(0);
             stb.insert();
  
+            assertEquals(1, storage.query().count());
+
             txn.exit();
  
             assertEquals(0, storage.query().count());
