@@ -551,6 +551,88 @@ public class TestRepair extends TestCase {
     }
 
     public void testResyncListener() throws Exception {
+        prepareOutOfSyncEntries();
+
+        final List<Storable> inserted = new ArrayList<Storable>();
+        final List<Storable[]> updated = new ArrayList<Storable[]>();
+        final List<Storable> deleted = new ArrayList<Storable>();
+
+        ResyncCapability.Listener<Storable> listener = new ResyncCapability.Listener<Storable>() {
+            @Override
+            public void afterInsert(Storable newStorable, Object state) {
+                inserted.add(newStorable);
+            }
+
+            @Override
+            public Object beforeUpdate(Storable oldStorable, Storable newStorable) {
+                updated.add(new Storable[] {oldStorable, newStorable});
+                return null;
+            }
+
+            @Override
+            public void afterDelete(Storable oldStorable, Object state) {
+                deleted.add(oldStorable);
+            }
+        };
+
+        ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
+        cap.resync(StorableTestBasic.class, listener, 1.0, null);
+        
+        assertEquals(1, inserted.size());
+        assertEquals(1, ((StorableTestBasic) inserted.get(0)).getId());
+        assertEquals("hello", ((StorableTestBasic) inserted.get(0)).getStringProp());
+
+        assertEquals(1, updated.size());
+        assertEquals(3, ((StorableTestBasic) (updated.get(0)[0])).getId());
+        assertEquals("bar", ((StorableTestBasic) (updated.get(0)[0])).getStringProp());
+        assertEquals(3, ((StorableTestBasic) (updated.get(0)[1])).getId());
+        assertEquals("foo", ((StorableTestBasic) (updated.get(0)[1])).getStringProp());
+
+        assertEquals(1, deleted.size());
+        assertEquals(2, ((StorableTestBasic) deleted.get(0)).getId());
+        assertEquals("world", ((StorableTestBasic) deleted.get(0)).getStringProp());
+    }
+
+    public void testResyncListenerUnrepair() throws Exception {
+        prepareOutOfSyncEntries();
+
+        ResyncCapability.Listener<StorableTestBasic> listener =
+            new ResyncCapability.Listener<StorableTestBasic>()
+        {
+            @Override
+            public Object beforeInsert(StorableTestBasic storable) {
+                // Force to be partially out of sync.
+                storable.setDoubleProp(123.456);
+                return null;
+            }
+
+            @Override
+            public Object beforeUpdate(StorableTestBasic storable) {
+                // Force to be partially out of sync.
+                storable.setDoubleProp(654.321);
+                return null;
+            }
+        };
+
+        ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
+        cap.resync(StorableTestBasic.class, listener, 1.0, null);
+
+        boolean insertUnrepair = false;
+        boolean updateUnrepair = false;
+
+        Storage<StorableTestBasic> storage = mReplicated.storageFor(StorableTestBasic.class);
+        Cursor<StorableTestBasic> cursor = storage.query().fetch();
+        while (cursor.hasNext()) {
+            StorableTestBasic storable = cursor.next();
+            insertUnrepair |= storable.getDoubleProp() == 123.456;
+            updateUnrepair |= storable.getDoubleProp() == 654.321;
+        }
+
+        assertTrue(insertUnrepair);
+        assertTrue(updateUnrepair);
+    }
+
+    private void prepareOutOfSyncEntries() throws Exception {
         // Insert an entry into master.
         {
             Storage<StorableTestBasic> storage = mMaster.storageFor(StorableTestBasic.class);
@@ -618,40 +700,5 @@ public class TestRepair extends TestCase {
             stb.setDoubleProp(1.0);
             stb.insert();
         }
-
-        final List<Storable> inserted = new ArrayList<Storable>();
-        final List<Storable[]> updated = new ArrayList<Storable[]>();
-        final List<Storable> deleted = new ArrayList<Storable>();
-
-        ResyncCapability.Listener<Storable> listener = new ResyncCapability.Listener<Storable>() {
-            public void inserted(Storable newStorable) {
-                inserted.add(newStorable);
-            }
-
-            public void updated(Storable oldStorable, Storable newStorable) {
-                updated.add(new Storable[] {oldStorable, newStorable});
-            }
-
-            public void deleted(Storable oldStorable) {
-                deleted.add(oldStorable);
-            }
-        };
-
-        ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
-        cap.resync(StorableTestBasic.class, listener, 1.0, null);
-        
-        assertEquals(1, inserted.size());
-        assertEquals(1, ((StorableTestBasic) inserted.get(0)).getId());
-        assertEquals("hello", ((StorableTestBasic) inserted.get(0)).getStringProp());
-
-        assertEquals(1, updated.size());
-        assertEquals(3, ((StorableTestBasic) (updated.get(0)[0])).getId());
-        assertEquals("bar", ((StorableTestBasic) (updated.get(0)[0])).getStringProp());
-        assertEquals(3, ((StorableTestBasic) (updated.get(0)[1])).getId());
-        assertEquals("foo", ((StorableTestBasic) (updated.get(0)[1])).getStringProp());
-
-        assertEquals(1, deleted.size());
-        assertEquals(2, ((StorableTestBasic) deleted.get(0)).getId());
-        assertEquals("world", ((StorableTestBasic) deleted.get(0)).getStringProp());
     }
 }
