@@ -39,6 +39,7 @@ public class TestKeyEncoding extends TestCase {
     private static final int SHORT_TEST = 100;
     private static final int MEDIUM_TEST = 1000;
     private static final int LONG_TEST = 10000;
+    private static final int LONG_LONG_TEST = 100000;
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
@@ -445,7 +446,6 @@ public class TestKeyEncoding extends TestCase {
         }
     }
 
-    /*
     public void test_BigDecimal() throws Exception {
         BigDecimal[] ref = new BigDecimal[1];
 
@@ -502,36 +502,29 @@ public class TestKeyEncoding extends TestCase {
                 new BigDecimal("-10.01"),
                 new BigDecimal("-10.001"),
                 new BigDecimal("10.001"),
+                new BigDecimal("10.01"),
+                new BigDecimal("10.1"),
+                new BigDecimal("11"),
                 new BigDecimal("90.01"),
             };
 
             byte[][] encoded = new byte[values.length][];
 
-            System.out.println();
             for (int i=0; i<values.length; i++) {
                 encoded[i] = new byte[KeyEncoder.calculateEncodedLength(values[i])];
                 KeyEncoder.encode(values[i], encoded[i], 0);
-                for (int j=0; j<encoded[i].length; j++) {
-                    int b = encoded[i][j] & 0xff;
-                    System.out.print(' ');
-                    if (b < 0x10) {
-                        System.out.print('0');
-                    }
-                    System.out.print(Integer.toHexString(b));
-                }
-                System.out.println();
             }
 
             for (int i=1; i<values.length; i++) {
-                assertTrue(TestDataEncoding.byteArrayCompare(encoded[i - 1], encoded[1]) < 0);
+                assertTrue(TestDataEncoding.byteArrayCompare(encoded[i - 1], encoded[i]) < 0);
             }
         }
 
-        byte[] bytes = new byte[5 + 1 + 100 + 5];
+        byte[] bytes = new byte[1000];
 
         BigDecimal lastValue = null;
         byte[] lastBytes = null;
-        for (int i=0; i<LONG_TEST; i++) {
+        for (int i=0; i<LONG_LONG_TEST; i++) {
             BigDecimal value;
             int mode = mRandom.nextInt(10);
             if (mode == 1) {
@@ -626,11 +619,11 @@ public class TestKeyEncoding extends TestCase {
             assertEquals(d2, ref[0]);
         }
 
-        byte[] bytes = new byte[5 + 1 + 100 + 5];
+        byte[] bytes = new byte[1000];
 
         BigDecimal lastValue = null;
         byte[] lastBytes = null;
-        for (int i=0; i<LONG_TEST; i++) {
+        for (int i=0; i<LONG_LONG_TEST; i++) {
             BigDecimal value;
             int mode = mRandom.nextInt(10);
             if (mode == 1) {
@@ -673,7 +666,6 @@ public class TestKeyEncoding extends TestCase {
             lastBytes = bytes.clone();
         }
     }
-    */
 
     public void test_String() throws Exception {
         String lastValue = null;

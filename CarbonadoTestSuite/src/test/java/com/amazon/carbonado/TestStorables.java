@@ -3110,7 +3110,6 @@ public class TestStorables extends TestCase {
         return bi;
     }
 
-    /*
     public void test_BigDecimal() throws Exception {
         BigDecimal bd = new BigDecimal("12345678901234567890.1234567890");
         BigDecimal expected = expected(bd);
@@ -3298,7 +3297,6 @@ public class TestStorables extends TestCase {
         WithBigDecimalPk last = null;
         while (cursor.hasNext()) {
             s = cursor.next();
-            System.out.println(s);
             if (last != null) {
                 assertTrue(s.getId().compareTo(last.getId()) > 0);
             }
@@ -3345,7 +3343,6 @@ public class TestStorables extends TestCase {
         assertFalse(s2.equals(s3));
         assertFalse(s1.equals(s3));
     }
-    */
 
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {
         for (String property : properties) {
