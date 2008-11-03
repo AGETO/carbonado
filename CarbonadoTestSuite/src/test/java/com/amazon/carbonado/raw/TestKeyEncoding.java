@@ -447,78 +447,107 @@ public class TestKeyEncoding extends TestCase {
     }
 
     public void test_BigDecimal() throws Exception {
+        test_BigDecimal(false);
+    }
+
+    public void test_BigDecimalDesc() throws Exception {
+        test_BigDecimal(true);
+    }
+
+    private void test_BigDecimal(boolean desc) throws Exception {
         BigDecimal[] ref = new BigDecimal[1];
 
-        {
-            BigDecimal d1 = new BigDecimal("123");
-            BigDecimal d2 = new BigDecimal("123.0");
+        BigDecimal[] values = {
+            new BigDecimal("-123.0"),
+            new BigDecimal("-123"),
+            new BigDecimal("-90.01000"),
+            new BigDecimal("-90.0100"),
+            new BigDecimal("-90.010"),
+            new BigDecimal("-90.01"),
+            new BigDecimal("-11.000"),
+            new BigDecimal("-11.00"),
+            new BigDecimal("-11.0"),
+            new BigDecimal("-11"),
+            new BigDecimal("-10.100"),
+            new BigDecimal("-10.10"),
+            new BigDecimal("-10.1"),
+            new BigDecimal("-10.010"),
+            new BigDecimal("-10.01"),
+            new BigDecimal("-10.001"),
+            new BigDecimal("-2"),
+            new BigDecimal("-1"),
+            new BigDecimal("-0.1"),
+            new BigDecimal("-0.01"),
+            new BigDecimal("-0.001"),
+            new BigDecimal("-0.0001"),
+            new BigDecimal("-0.00001"),
+            BigDecimal.ZERO,
+            new BigDecimal("0.00001"),
+            new BigDecimal("0.0001"),
+            new BigDecimal("0.001"),
+            new BigDecimal("0.01"),
+            new BigDecimal("0.1"),
+            new BigDecimal("1"),
+            new BigDecimal("2"),
+            new BigDecimal("10.001"),
+            new BigDecimal("10.01"),
+            new BigDecimal("10.010"),
+            new BigDecimal("10.1"),
+            new BigDecimal("10.10"),
+            new BigDecimal("10.100"),
+            new BigDecimal("11"),
+            new BigDecimal("11.0"),
+            new BigDecimal("11.00"),
+            new BigDecimal("11.000"),
+            new BigDecimal("90.01"),
+            new BigDecimal("90.010"),
+            new BigDecimal("90.0100"),
+            new BigDecimal("90.01000"),
+            new BigDecimal("123"),
+            new BigDecimal("123.0"),
+        };
 
-            assertTrue(d1.compareTo(d2) == 0);
-            assertFalse(d1.equals(d2));
+        byte[][] encoded = new byte[values.length][];
 
-            byte[] b1 = new byte[KeyEncoder.calculateEncodedLength(d1)];
-            KeyEncoder.encode(d1, b1, 0);
-
-            byte[] b2 = new byte[KeyEncoder.calculateEncodedLength(d2)];
-            KeyEncoder.encode(d2, b2, 0);
-
-            assertTrue(TestDataEncoding.byteArrayCompare(b1, b2) < 0);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decode(b1, 0, ref);
-            assertEquals(d1, ref[0]);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decode(b2, 0, ref);
-            assertEquals(d2, ref[0]);
-        }
-
-        {
-            BigDecimal d1 = new BigDecimal("-123.0");
-            BigDecimal d2 = new BigDecimal("-123");
-
-            assertTrue(d1.compareTo(d2) == 0);
-            assertFalse(d1.equals(d2));
-
-            byte[] b1 = new byte[KeyEncoder.calculateEncodedLength(d1)];
-            KeyEncoder.encode(d1, b1, 0);
-
-            byte[] b2 = new byte[KeyEncoder.calculateEncodedLength(d2)];
-            KeyEncoder.encode(d2, b2, 0);
-
-            assertTrue(TestDataEncoding.byteArrayCompare(b1, b2) < 0);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decode(b1, 0, ref);
-            assertEquals(d1, ref[0]);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decode(b2, 0, ref);
-            assertEquals(d2, ref[0]);
-        }
-
-        {
-            BigDecimal[] values = {
-                new BigDecimal("-10.01"),
-                new BigDecimal("-10.001"),
-                new BigDecimal("10.001"),
-                new BigDecimal("10.01"),
-                new BigDecimal("10.1"),
-                new BigDecimal("11"),
-                new BigDecimal("90.01"),
-            };
-
-            byte[][] encoded = new byte[values.length][];
-
-            for (int i=0; i<values.length; i++) {
-                encoded[i] = new byte[KeyEncoder.calculateEncodedLength(values[i])];
+        for (int i=0; i<values.length; i++) {
+            encoded[i] = new byte[KeyEncoder.calculateEncodedLength(values[i])];
+            if (desc) {
+                KeyEncoder.encodeDesc(values[i], encoded[i], 0);
+            } else {
                 KeyEncoder.encode(values[i], encoded[i], 0);
             }
+        }
 
-            for (int i=1; i<values.length; i++) {
-                assertTrue(TestDataEncoding.byteArrayCompare(encoded[i - 1], encoded[i]) < 0);
+        for (int i=0; i<values.length; i++) {
+            ref[0] = BigDecimal.ZERO;
+            if (desc) {
+                KeyDecoder.decodeDesc(encoded[i], 0, ref);
+            } else {
+                KeyDecoder.decode(encoded[i], 0, ref);
+            }
+            assertEquals(values[i], ref[0]);
+        }
+
+        for (int i=1; i<values.length; i++) {
+            int sgn = TestDataEncoding.byteArrayCompare(encoded[i - 1], encoded[i]);
+            if (desc) {
+                assertTrue(sgn > 0);
+            } else {
+                assertTrue(sgn < 0);
             }
         }
+    }
+
+    public void test_BigDecimalRandom() throws Exception {
+        test_BigDecimalRandom(false);
+    }
+
+    public void test_BigDecimalRandomDesc() throws Exception {
+        test_BigDecimalRandom(true);
+    }
+
+    private void test_BigDecimalRandom(boolean desc) throws Exception {
+        BigDecimal[] ref = new BigDecimal[1];
 
         byte[] bytes = new byte[1000];
 
@@ -526,7 +555,7 @@ public class TestKeyEncoding extends TestCase {
         byte[] lastBytes = null;
         for (int i=0; i<LONG_LONG_TEST; i++) {
             BigDecimal value;
-            int mode = mRandom.nextInt(10);
+            int mode = mRandom.nextInt(20);
             if (mode == 1) {
                 value = null;
             } else if (mode == 2) {
@@ -548,10 +577,19 @@ public class TestKeyEncoding extends TestCase {
             }
 
             int amt = KeyEncoder.calculateEncodedLength(value);
-            int actualAmt = KeyEncoder.encode(value, bytes, 0);
+            int actualAmt;
+            if (desc) {
+                actualAmt = KeyEncoder.encodeDesc(value, bytes, 0);
+            } else {
+                actualAmt = KeyEncoder.encode(value, bytes, 0);
+            }
             assertEquals(amt, actualAmt);
 
-            actualAmt = KeyDecoder.decode(bytes, 0, ref);
+            if (desc) {
+                actualAmt = KeyDecoder.decodeDesc(bytes, 0, ref);
+            } else {
+                actualAmt = KeyDecoder.decode(bytes, 0, ref);
+            }
             if (value != null && value.compareTo(BigDecimal.ZERO) == 0) {
                 assertTrue(value.compareTo(ref[0]) == 0);
             } else {
@@ -561,105 +599,9 @@ public class TestKeyEncoding extends TestCase {
 
             if (lastBytes != null) {
                 int sgn = TestDataEncoding.compare(value, lastValue);
-                assertEquals(sgn, TestDataEncoding.byteArrayCompare(bytes, lastBytes));
-            }
-            lastValue = value;
-            lastBytes = bytes.clone();
-        }
-    }
-
-    public void test_BigDecimalDesc() throws Exception {
-        BigDecimal[] ref = new BigDecimal[1];
-
-        {
-            BigDecimal d1 = new BigDecimal("123");
-            BigDecimal d2 = new BigDecimal("123.0");
-
-            assertTrue(d1.compareTo(d2) == 0);
-            assertFalse(d1.equals(d2));
-
-            byte[] b1 = new byte[KeyEncoder.calculateEncodedLength(d1)];
-            KeyEncoder.encodeDesc(d1, b1, 0);
-
-            byte[] b2 = new byte[KeyEncoder.calculateEncodedLength(d2)];
-            KeyEncoder.encodeDesc(d2, b2, 0);
-
-            assertTrue(TestDataEncoding.byteArrayCompare(b1, b2) > 0);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decodeDesc(b1, 0, ref);
-            assertEquals(d1, ref[0]);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decodeDesc(b2, 0, ref);
-            assertEquals(d2, ref[0]);
-        }
-
-        {
-            BigDecimal d1 = new BigDecimal("-123.0");
-            BigDecimal d2 = new BigDecimal("-123");
-
-            assertTrue(d1.compareTo(d2) == 0);
-            assertFalse(d1.equals(d2));
-
-            byte[] b1 = new byte[KeyEncoder.calculateEncodedLength(d1)];
-            KeyEncoder.encodeDesc(d1, b1, 0);
-
-            byte[] b2 = new byte[KeyEncoder.calculateEncodedLength(d2)];
-            KeyEncoder.encodeDesc(d2, b2, 0);
-
-            assertTrue(TestDataEncoding.byteArrayCompare(b1, b2) > 0);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decodeDesc(b1, 0, ref);
-            assertEquals(d1, ref[0]);
-
-            ref[0] = BigDecimal.ZERO;
-            KeyDecoder.decodeDesc(b2, 0, ref);
-            assertEquals(d2, ref[0]);
-        }
-
-        byte[] bytes = new byte[1000];
-
-        BigDecimal lastValue = null;
-        byte[] lastBytes = null;
-        for (int i=0; i<LONG_LONG_TEST; i++) {
-            BigDecimal value;
-            int mode = mRandom.nextInt(10);
-            if (mode == 1) {
-                value = null;
-            } else if (mode == 2) {
-                int len = mRandom.nextInt(10 * 8);
-                BigInteger unscaled = new BigInteger(len, mRandom);
-                if (mRandom.nextBoolean()) {
-                    unscaled = unscaled.negate();
+                if (desc) {
+                    sgn = -sgn;
                 }
-                int scale = mRandom.nextInt(10) - 5;
-                value = new BigDecimal(unscaled, scale);
-            } else {
-                int len = mRandom.nextInt(100 * 8);
-                BigInteger unscaled = new BigInteger(len, mRandom);
-                if (mRandom.nextBoolean()) {
-                    unscaled = unscaled.negate();
-                }
-                int scale = mRandom.nextInt();
-                value = new BigDecimal(unscaled, scale);
-            }
-
-            int amt = KeyEncoder.calculateEncodedLength(value);
-            int actualAmt = KeyEncoder.encodeDesc(value, bytes, 0);
-            assertEquals(amt, actualAmt);
-
-            actualAmt = KeyDecoder.decodeDesc(bytes, 0, ref);
-            if (value != null && value.compareTo(BigDecimal.ZERO) == 0) {
-                assertTrue(value.compareTo(ref[0]) == 0);
-            } else {
-                assertEquals(value, ref[0]);
-            }
-            assertEquals(amt, actualAmt);
-
-            if (lastBytes != null) {
-                int sgn = -TestDataEncoding.compare(value, lastValue);
                 assertEquals(sgn, TestDataEncoding.byteArrayCompare(bytes, lastBytes));
             }
             lastValue = value;
