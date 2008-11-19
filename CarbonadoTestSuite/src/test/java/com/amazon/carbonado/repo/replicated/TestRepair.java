@@ -367,14 +367,20 @@ public class TestRepair extends TestCase {
     }
 
     public void testCorruptEntry() throws Exception {
-        testCorruptEntry(false);
+        testCorruptEntry(false, false);
     }
 
     public void testCorruptEntryPreventDelete() throws Exception {
-        testCorruptEntry(true);
+        testCorruptEntry(false, true);
     }
 
-    private void testCorruptEntry(boolean preventDelete) throws Exception {
+    public void testIndividualCorruptEntry() throws Exception {
+        testCorruptEntry(true, false);
+    }
+
+    private void testCorruptEntry(boolean individualRepair, boolean preventDelete)
+        throws Exception
+    {
         // Close and open repository again, this time on disk. We need to close
         // and re-open the repository as part of the test.
         String[] locations = reOpenPersistent(null);
@@ -494,7 +500,7 @@ public class TestRepair extends TestCase {
         // Resync to repair.
 
         class Prevent extends Trigger {
-            boolean didRun;
+            volatile boolean didRun;
 
             @Override
             public Object beforeDelete(Object s) throws PersistException {
@@ -514,7 +520,14 @@ public class TestRepair extends TestCase {
         }
 
         ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
-        cap.resync(type0, 1.0, null);
+
+        if (individualRepair) {
+            for (int i=0; i<count; i++) {
+                cap.resync(type0, 1.0, "id=?", i);
+            }
+        } else {
+            cap.resync(type0, 1.0, null);
+        }
 
         if (preventDelete) {
             // Again, this is a partially vestigial test. The trigger should
