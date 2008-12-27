@@ -21,6 +21,7 @@ package com.amazon.carbonado.repo.indexed;
 import java.util.Map;
 
 import junit.framework.TestSuite;
+import com.amazon.carbonado.synthetic.SyntheticStorableReferenceAccess;
 import com.amazon.carbonado.synthetic.TestSyntheticStorableBuilders;
 import com.amazon.carbonado.info.StorableIndex;
 import com.amazon.carbonado.info.StorableInfo;
@@ -55,9 +56,10 @@ public class TestIndexEntryGenerator extends TestSyntheticStorableBuilders {
     public void test_IndexGenerator() throws Exception {
         for (TestSyntheticStorableBuilders.TestDef test : TestSyntheticStorableBuilders.TESTS) {
             StorableIndex<StorableTestBasic> indexDesc = newStorableIndex(test);
-            IndexEntryGenerator<StorableTestBasic> builder = IndexEntryGenerator.getInstance(indexDesc);
+            SyntheticStorableReferenceAccess<StorableTestBasic> access =
+                IndexEntryGenerator.getIndexAccess(indexDesc);
 
-            Class s = builder.getIndexEntryClass();
+            Class s = access.getReferenceClass();
 
             validateIndexEntry(test, s);
             exerciseStorable(s);
@@ -68,26 +70,26 @@ public class TestIndexEntryGenerator extends TestSyntheticStorableBuilders {
             master.insert();
 
             Storable index = mRepository.storageFor(s).prepare();
-            builder.copyFromMaster(index, master);
+            access.copyFromMaster(index, master);
             index.insert();
 
             Storable indexChecker = mRepository.storageFor(s).prepare();
-            builder.copyFromMaster(indexChecker, master);
+            access.copyFromMaster(indexChecker, master);
             assertTrue(indexChecker.tryLoad());
 
             StorableTestBasic masterChecker =
                 mRepository.storageFor(StorableTestBasic.class).prepare();
-            builder.copyToMasterPrimaryKey(indexChecker, masterChecker);
+            access.copyToMasterPrimaryKey(indexChecker, masterChecker);
             masterChecker.load();
             assertEquals(master, masterChecker);
 
-            assertTrue(builder.isConsistent(index, master));
+            assertTrue(access.isConsistent(index, master));
             masterChecker =
                 mRepository.storageFor(StorableTestBasic.class).prepare();
             master.copyAllProperties(masterChecker);
-            assertTrue(builder.isConsistent(index, masterChecker));
+            assertTrue(access.isConsistent(index, masterChecker));
             masterChecker.setId(-42);
-            assertFalse(builder.isConsistent(index, masterChecker));
+            assertFalse(access.isConsistent(index, masterChecker));
 
         }
     }
