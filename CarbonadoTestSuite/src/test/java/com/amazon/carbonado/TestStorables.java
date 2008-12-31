@@ -737,6 +737,29 @@ public class TestStorables extends TestCase {
         assertTrue(s.tryUpdate());
     }
 
+    public void test_versioningSideEffect() throws Exception {
+        Storage<StorableVersioned> storage = getRepository().storageFor(StorableVersioned.class);
+
+        StorableVersioned s = storage.prepare();
+        s.setID(500111);
+        s.setValue("hello");
+        s.insert();
+
+        s = storage.prepare();
+        s.setID(500111);
+        s.setValue("world");
+
+        assertEquals(false, s.tryInsert());
+        // Make sure that the failed insert removes the automatic initial
+        // version number.
+        try {
+            s.update();
+            fail();
+        } catch (IllegalStateException e) {
+            // Caused by not setting the version.
+        }
+    }
+
     public void test_versioningWithLong() throws Exception {
         Storage<StorableVersionedWithLong> storage =
             getRepository().storageFor(StorableVersionedWithLong.class);
