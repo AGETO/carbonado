@@ -134,7 +134,41 @@ public class TestTransactionManager extends TestCase {
         es.shutdown();
     }
 
+    public void testBrokenRollback() throws Exception {
+        TransactionScope<Txn> scope = mTxnMgr.localScope();
+        Transaction txn = scope.enter(null);
+        Txn t = scope.getTxn();
+        t.doFail = true;
+
+        try {
+            txn.exit();
+            fail();
+        } catch (Exception e) {
+        }
+
+        Transaction txn2 = scope.enter(null);
+        Txn t2 = scope.getTxn();
+
+        // If not null, then exception thrown while exiting previous
+        // transaction did not properly clean up. As a result, new transaction
+        // is nested.
+        assertNull(t2.parent);
+    }
+
     private static class Txn {
+        final Txn parent;
+
+        volatile boolean doFail;
+
+        Txn(Txn parent) {
+            this.parent = parent;
+        }
+
+        void abort() {
+            if (doFail) {
+                throw new IllegalStateException("fail");
+            }
+        }
     }
 
     private static class TM extends TransactionManager<Txn> {
@@ -147,7 +181,7 @@ public class TestTransactionManager extends TestCase {
         }
 
         protected Txn createTxn(Txn parent, IsolationLevel level) {
-            return new Txn();
+            return new Txn(parent);
         }
 
         protected boolean commitTxn(Txn txn) {
@@ -155,6 +189,7 @@ public class TestTransactionManager extends TestCase {
         }
 
         protected void abortTxn(Txn txn) {
+            txn.abort();
         }
     }
 }
