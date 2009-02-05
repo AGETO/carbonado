@@ -74,19 +74,23 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
         mData = DB_Legacy_DbtPool.createDbt();
     }
 
+    @Override
     protected byte[] searchKey_getData() {
         return getData(mSearchKey.get_data(), mSearchKey.get_size());
     }
 
+    @Override
     protected byte[] searchKey_getDataCopy() {
         return getDataCopy(mSearchKey.get_data(), mSearchKey.get_size());
     }
 
+    @Override
     protected void searchKey_setData(byte[] data) {
         mSearchKey.set_data(data);
         mSearchKey.set_size(data.length);
     }
 
+    @Override
     protected void searchKey_setPartial(boolean partial) {
         mSearchKey.set_doff(0);
         mSearchKey.set_dlen(0);
@@ -99,18 +103,22 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
         mSearchKey.set_flags(flags);
     }
 
+    @Override
     protected boolean searchKey_getPartial() {
         return (mSearchKey.get_flags() & Db.DB_DBT_PARTIAL) != 0;
     }
 
+    @Override
     protected byte[] data_getData() {
         return getData(mData.get_data(), mData.get_size());
     }
 
+    @Override
     protected byte[] data_getDataCopy() {
         return getDataCopy(mData.get_data(), mData.get_size());
     }
 
+    @Override
     protected void data_setPartial(boolean partial) {
         mData.set_doff(0);
         mData.set_dlen(0);
@@ -123,15 +131,18 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
         mData.set_flags(flags);
     }
 
+    @Override
     protected boolean data_getPartial() {
         return (mData.get_flags() & Db.DB_DBT_PARTIAL) != 0;
     }
 
+    @Override
     protected byte[] primaryKey_getData() {
         // Search key is primary key.
         return getData(mSearchKey.get_data(), mSearchKey.get_size());
     }
 
+    @Override
     protected void cursor_open(DbTxn txn, IsolationLevel level) throws Exception {
         int flags = 0;
         if (level == IsolationLevel.READ_UNCOMMITTED) {
@@ -140,44 +151,64 @@ class DB_Legacy_Cursor<S extends Storable> extends BDBCursor<DbTxn, S> {
         mCursor = mDatabase.cursor(txn, flags);
     }
 
+    @Override
     protected void cursor_close() throws Exception {
-        mCursor.close();
-        mCursor = null;
-        DB_Legacy_DbtPool.recycleDbt(mSearchKey);
-        mSearchKey = null;
-        DB_Legacy_DbtPool.recycleDbt(mData);
-        mData = null;
+        Dbc cursor = mCursor;
+        if (cursor != null) {
+            mCursor = null;
+            cursor.close();
+            DB_Legacy_DbtPool.recycleDbt(mSearchKey);
+            mSearchKey = null;
+            DB_Legacy_DbtPool.recycleDbt(mData);
+            mData = null;
+        }
     }
 
+    @Override
     protected boolean cursor_getCurrent() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_CURRENT | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_CURRENT | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getFirst() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_FIRST | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_FIRST | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getLast() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_LAST | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_LAST | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getSearchKeyRange() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_SET_RANGE | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_SET_RANGE | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getNext() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_NEXT | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_NEXT | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getNextDup() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_NEXT_DUP | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_NEXT_DUP | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getPrev() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_PREV | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_PREV | mLockMode) == 0;
     }
 
+    @Override
     protected boolean cursor_getPrevNoDup() throws Exception {
-        return mCursor.get(mSearchKey, mData, Db.DB_PREV_NODUP | mLockMode) == 0;
+        return cursor().get(mSearchKey, mData, Db.DB_PREV_NODUP | mLockMode) == 0;
+    }
+
+    private Dbc cursor() throws FetchException {
+        Dbc cursor = mCursor;
+        if (cursor == null) {
+            throw new FetchException("Cursor is not open");
+        }
+        return cursor;
     }
 }
