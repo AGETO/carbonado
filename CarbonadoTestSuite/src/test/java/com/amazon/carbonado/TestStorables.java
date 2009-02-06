@@ -1546,6 +1546,34 @@ public class TestStorables extends TestCase {
         assertEquals(0, query.with(0.2).count());
     }
 
+    public void test_basicDerivedJoinIndex() throws Exception {
+        test_basicDerivedJoinIndex(getRepository());
+    }
+
+    protected void test_basicDerivedJoinIndex(Repository repo) throws Exception {
+        Storage<WithJoinIndex> storage1 = repo.storageFor(WithJoinIndex.class);
+        Storage<WithJoinIndex.Basic> storage2 = repo.storageFor(WithJoinIndex.Basic.class);
+
+        WithJoinIndex.Basic basic = storage2.prepare();
+        basic.setId(128120938);
+        basic.setIntProp(999);
+        basic.insert();
+
+        WithJoinIndex join = storage1.prepare();
+        join.setId(1);
+        join.setBasic(basic);
+        join.insert();
+
+        join = storage1.query("intProp = ?").with(999).loadOne();
+
+        // Make sure delete does cause dependent properties to try load a
+        // missing joined object.
+        basic.delete();
+
+        join = storage1.query("intProp = ?").with(999).tryLoadOne();
+        assertNull(join);
+    }
+
     public void test_derivedJoinIndex() throws Exception {
         test_derivedJoinIndex(getRepository());
     }

@@ -69,6 +69,16 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
     }
 
     @Override
+    public void test_basicDerivedJoinIndex() throws Exception {
+        // Needs to use custom indexing for this test to work.
+        IndexedRepositoryBuilder builder = new IndexedRepositoryBuilder();
+        builder.setWrappedRepository(jdbcBuilder(true));
+        Repository repo = builder.build();
+        test_basicDerivedJoinIndex(repo);
+    }
+
+
+    @Override
     protected Repository buildRepository(boolean isMaster) throws RepositoryException {
         return jdbcBuilder(isMaster).build();
     }
