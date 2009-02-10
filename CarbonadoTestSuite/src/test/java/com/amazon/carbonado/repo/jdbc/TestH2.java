@@ -68,6 +68,7 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
         test_derivedJoinIndex(repo);
     }
 
+    /* FIXME: Deleting of derived index entries needs more thought.
     @Override
     public void test_basicDerivedJoinIndex() throws Exception {
         // Needs to use custom indexing for this test to work.
@@ -76,7 +77,7 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
         Repository repo = builder.build();
         test_basicDerivedJoinIndex(repo);
     }
-
+    */
 
     @Override
     protected Repository buildRepository(boolean isMaster) throws RepositoryException {
