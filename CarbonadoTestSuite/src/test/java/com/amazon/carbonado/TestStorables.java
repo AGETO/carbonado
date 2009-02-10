@@ -3397,6 +3397,38 @@ public class TestStorables extends TestCase {
         assertFalse(s1.equals(s3));
     }
 
+    public void test_joinExistsQuery() throws Exception {
+        Storage<Order> orders = getRepository().storageFor(Order.class);
+        Storage<OrderItem> orderItems = getRepository().storageFor(OrderItem.class);
+
+        Order order = orders.prepare();
+        order.setOrderID(1);
+        order.setOrderNumber("111");
+        order.setOrderTotal(123);
+        order.setAddressID(0);
+        order.insert();
+
+        OrderItem item = orderItems.prepare();
+        item.setOrderItemID(2);
+        item.setOrderID(1);
+        item.setItemDescription("stuff");
+        item.setItemQuantity(1);
+        item.setItemPrice(123);
+        item.setShipmentID(0);
+        item.insert();
+
+        Query<Order> query = orders.query("orderTotal = ? & orderItems(itemQuantity = ?)");
+
+        order = query.with(123).with(1).loadOne();
+        assertEquals(1, order.getOrderID());
+
+        order = query.with(123).with(2).tryLoadOne();
+        assertNull(order);
+
+        order = query.with(1234).with(1).tryLoadOne();
+        assertNull(order);
+    }
+
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {
         for (String property : properties) {
             assertEquals(expected, storable.isPropertyUninitialized(property));
