@@ -38,6 +38,7 @@ import com.amazon.carbonado.repo.indexed.IndexedRepositoryBuilder;
 import com.amazon.carbonado.TestUtilities;
 
 import com.amazon.carbonado.stored.StorableWithLobs;
+import com.amazon.carbonado.stored.WithPropertyOther;
 
 /**
  * 
@@ -59,6 +60,17 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
         super(name);
     }
 
+    public void test_propertyOther() throws Exception {
+        Storage<WithPropertyOther> storage = getRepository().storageFor(WithPropertyOther.class);
+        WithPropertyOther other = storage.prepare();
+        other.setId(1);
+        other.setObject("hello");
+        other.insert();
+
+        other.load();
+        assertEquals("hello", other.getObject());
+    }
+
     @Override
     public void test_derivedJoinIndex() throws Exception {
         // Needs to use custom indexing for this test to work.
@@ -78,11 +90,6 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
         test_basicDerivedJoinIndex(repo);
     }
     */
-
-    @Override
-    protected Repository buildRepository(boolean isMaster) throws RepositoryException {
-        return jdbcBuilder(isMaster).build();
-    }
 
     // Override because H2 does not fully support LOBs.
     @Override
@@ -367,6 +374,11 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
     @Override
     protected BigDecimal expected(BigDecimal bd) {
         return bd;
+    }
+
+    @Override
+    protected Repository buildRepository(boolean isMaster) throws RepositoryException {
+        return jdbcBuilder(isMaster).build();
     }
 
     private RepositoryBuilder jdbcBuilder(boolean isMaster) throws RepositoryException {

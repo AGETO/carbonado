@@ -120,6 +120,9 @@ public class H2SchemaResolver implements SchemaResolver {
                 typeName = "CLOB";
             } else if (type == BigDecimal.class || type == BigInteger.class) {
                 typeName = "NUMBER";
+            } else if (type == Object.class) {
+                // Object type is used by some tests.
+                typeName = "VARCHAR";
             } else {
                 return false;
             }
