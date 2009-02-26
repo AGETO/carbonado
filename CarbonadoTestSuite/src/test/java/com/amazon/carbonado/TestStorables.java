@@ -561,6 +561,40 @@ public class TestStorables extends TestCase {
         assertEquals(storable.getDoubleProp(), castedCopy.getDoubleProp());
     }
 
+    public void test_equals() throws Exception {
+        // Make sure that tests against nullable properties is correct.
+        Storage<WithDerivedDoubleObjVersion> storage =
+            getRepository().storageFor(WithDerivedDoubleObjVersion.class);
+        WithDerivedDoubleObjVersion obj1 = storage.prepare();
+        WithDerivedDoubleObjVersion obj2 = storage.prepare();
+
+        assertTrue(obj1.equals(obj2));
+
+        obj1.setName("bob");
+        assertFalse(obj1.equals(obj2));
+        assertFalse(obj2.equals(obj1));
+
+        obj2.setName("bob");
+        assertTrue(obj1.equals(obj2));
+        assertTrue(obj2.equals(obj1));
+
+        obj2.markAllPropertiesClean();
+        assertTrue(obj1.equals(obj2));
+        assertTrue(obj2.equals(obj1));
+
+        obj1.setValue(1.1);
+        assertFalse(obj1.equals(obj2));
+        assertFalse(obj2.equals(obj1));
+
+        obj2.setValue(1.1);
+        assertTrue(obj1.equals(obj2));
+        assertTrue(obj2.equals(obj1));
+
+        obj2.setValue(1.2);
+        assertFalse(obj1.equals(obj2));
+        assertFalse(obj2.equals(obj1));
+    }
+
     public void test_invalidStorables() throws Exception {
         try {
             getRepository().storageFor(StorableTestInvalid.class);
