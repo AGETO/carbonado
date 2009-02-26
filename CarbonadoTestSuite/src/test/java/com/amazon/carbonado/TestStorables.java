@@ -655,6 +655,27 @@ public class TestStorables extends TestCase {
         }
     }
 
+    public void test_independent() throws Exception {
+        // Just make sure that no check is performed for unset independent property.
+        Storage<StorableIndependent> storage =
+            getRepository().storageFor(StorableIndependent.class);
+        StorableIndependent s = storage.prepare();
+        s.setID(100);
+        try {
+            s.insert();
+            fail();
+        } catch (ConstraintException e) {
+            // Din't set name.
+        }
+
+        s.setValue("value");
+        // Should not check unset independent property, name.
+        s.insert();
+
+        s.setName("bob");
+        s.update();
+    }
+
     public void test_nonDestructiveUpdate() throws Exception {
         Storage<StorableTestBasic> storage = getRepository().storageFor(StorableTestBasic.class);
         StorableTestBasic s = storage.prepare();
