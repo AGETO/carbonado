@@ -19,6 +19,7 @@
 package com.amazon.carbonado.repo.sleepycat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -49,6 +50,82 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     // Default cache size, in bytes.
     private static final int DEFAULT_CACHE_SIZE = 60 * 1024 * 1024;
 
+    private static DbEnv openEnv(BDBRepositoryBuilder builder, boolean recovery)
+        throws ConfigurationException, DbException, FileNotFoundException
+    {
+        DbEnv env;
+        try {
+            env = (DbEnv) builder.getInitialEnvironmentConfig();
+        } catch (ClassCastException e) {
+            throw new ConfigurationException
+                ("Unsupported initial environment config. Must be instance of " +
+                 DbEnv.class.getName(), e);
+        }
+
+        if (env == null) {
+            env = new DbEnv(0);
+        }
+
+        env.set_lk_max_locks(10000);
+        env.set_lk_max_objects(10000);
+
+        long lockTimeout = builder.getLockTimeoutInMicroseconds();
+        long txnTimeout = builder.getTransactionTimeoutInMicroseconds();
+
+        env.set_timeout(lockTimeout, Db.DB_SET_LOCK_TIMEOUT);
+        env.set_timeout(txnTimeout, Db.DB_SET_TXN_TIMEOUT);
+
+        Long cacheSize = builder.getCacheSize();
+        if (cacheSize == null) {
+            env.set_cachesize(0, DEFAULT_CACHE_SIZE, 0);
+        } else {
+            int gbytes = (int) (cacheSize / (1024 * 1024 * 1024));
+            int bytes = (int) (cacheSize - gbytes * (1024 * 1024 * 1024));
+            env.set_cachesize(gbytes, bytes, 0);
+        }
+
+        {
+            int flags = 0;
+
+            flags |= Db.DB_AUTO_COMMIT;
+
+            if (builder.getTransactionNoSync()) {
+                flags |= Db.DB_TXN_NOSYNC;
+            }
+            if (builder.getTransactionWriteNoSync()) {
+                flags |= Db.DB_TXN_WRITE_NOSYNC;
+            }
+
+            if (builder.isPrivate()) {
+                flags |= Db.DB_PRIVATE;
+            }
+
+            env.set_flags(flags, true);
+        }
+
+        {
+            int flags = 0;
+
+            flags |= Db.DB_INIT_LOCK;
+            flags |= Db.DB_INIT_LOG;
+            flags |= Db.DB_INIT_MPOOL;
+            flags |= Db.DB_INIT_TXN;
+            flags |= Db.DB_THREAD;
+
+            if (!builder.getReadOnly()) {
+                flags |= Db.DB_CREATE;
+            }
+
+            if (recovery) {
+                flags |= Db.DB_RECOVER_FATAL;
+            }
+
+            env.open(builder.getEnvironmentHome(), flags, 0);
+        }
+
+        return env;
+    }
+
     final DbEnv mEnv;
     final boolean mReadOnly;
 
@@ -63,76 +140,27 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     {
         super(rootRef, builder, DB_Legacy_ExceptionTransformer.getInstance());
 
-        boolean readOnly = builder.getReadOnly();
-
-        long lockTimeout = builder.getLockTimeoutInMicroseconds();
-        long txnTimeout = builder.getTransactionTimeoutInMicroseconds();
+        if (builder.getRunFullRecovery() && !builder.getReadOnly()) {
+            // Open with recovery, close, and then re-open.
+            try {
+                openEnv(builder, true).close(0);
+            } catch (ConfigurationException e) {
+                throw e;
+            } catch (DbException e) {
+                throw DB_Legacy_ExceptionTransformer.getInstance().toRepositoryException(e);
+            } catch (Throwable e) {
+                String message = "Unable to recover environment";
+                if (e.getMessage() != null) {
+                    message += ": " + e.getMessage();
+                }
+                throw new RepositoryException(message, e);
+            }
+        }
 
         try {
-            DbEnv env;
-            try {
-                env = (DbEnv) builder.getInitialEnvironmentConfig();
-            } catch (ClassCastException e) {
-                throw new ConfigurationException
-                    ("Unsupported initial environment config. Must be instance of " +
-                     DbEnv.class.getName(), e);
-            }
-
-            if (env == null) {
-                env = new DbEnv(0);
-            }
-
-            mEnv = env;
-
-            mEnv.set_lk_max_locks(10000);
-            mEnv.set_lk_max_objects(10000);
-
-            mEnv.set_timeout(lockTimeout, Db.DB_SET_LOCK_TIMEOUT);
-            mEnv.set_timeout(txnTimeout, Db.DB_SET_TXN_TIMEOUT);
-
-            Long cacheSize = builder.getCacheSize();
-            if (cacheSize == null) {
-                mEnv.set_cachesize(0, DEFAULT_CACHE_SIZE, 0);
-            } else {
-                int gbytes = (int) (cacheSize / (1024 * 1024 * 1024));
-                int bytes = (int) (cacheSize - gbytes * (1024 * 1024 * 1024));
-                mEnv.set_cachesize(gbytes, bytes, 0);
-            }
-
-            {
-                int flags = 0;
-
-                flags |= Db.DB_AUTO_COMMIT;
-
-                if (builder.getTransactionNoSync()) {
-                    flags |= Db.DB_TXN_NOSYNC;
-                }
-                if (builder.getTransactionWriteNoSync()) {
-                    flags |= Db.DB_TXN_WRITE_NOSYNC;
-                }
-
-                if (builder.isPrivate()) {
-                    flags |= Db.DB_PRIVATE;
-                }
-
-                mEnv.set_flags(flags, true);
-            }
-
-            {
-                int flags = 0;
-
-                flags |= Db.DB_INIT_LOCK;
-                flags |= Db.DB_INIT_LOG;
-                flags |= Db.DB_INIT_MPOOL;
-                flags |= Db.DB_INIT_TXN;
-                flags |= Db.DB_THREAD;
-
-                if (!readOnly) {
-                    flags |= Db.DB_CREATE;
-                }
-
-                mEnv.open(builder.getEnvironmentHome(), flags, 0);
-            }
+            mEnv = openEnv(builder, false);
+        } catch (ConfigurationException e) {
+            throw e;
         } catch (DbException e) {
             throw DB_Legacy_ExceptionTransformer.getInstance().toRepositoryException(e);
         } catch (Throwable e) {
@@ -143,6 +171,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             throw new RepositoryException(message, e);
         }
 
+        boolean readOnly = builder.getReadOnly();
         if (!readOnly && !builder.getDataHomeFile().canWrite()) {
             // Allow environment to be created, but databases are read-only.
             // This is only significant if data home differs from environment home.
@@ -150,6 +179,9 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
 
         mReadOnly = readOnly;
+
+        long lockTimeout = builder.getLockTimeoutInMicroseconds();
+        long txnTimeout = builder.getTransactionTimeoutInMicroseconds();
 
         long deadlockInterval = Math.min(lockTimeout, txnTimeout);
         // Make sure interval is no smaller than 0.5 seconds.
