@@ -20,6 +20,9 @@ package com.amazon.carbonado.repo.sleepycat;
 
 import java.io.File;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.db.Db;
@@ -47,7 +50,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     private static final int DEFAULT_CACHE_SIZE = 60 * 1024 * 1024;
 
     final DbEnv mEnv;
-    boolean mReadOnly;
+    final boolean mReadOnly;
 
     /**
      * Open the repository using the given BDB repository configuration.
@@ -60,7 +63,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     {
         super(rootRef, builder, DB_Legacy_ExceptionTransformer.getInstance());
 
-        mReadOnly = builder.getReadOnly();
+        boolean readOnly = builder.getReadOnly();
 
         long lockTimeout = builder.getLockTimeoutInMicroseconds();
         long txnTimeout = builder.getTransactionTimeoutInMicroseconds();
@@ -124,7 +127,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
                 flags |= Db.DB_INIT_TXN;
                 flags |= Db.DB_THREAD;
 
-                if (!mReadOnly) {
+                if (!readOnly) {
                     flags |= Db.DB_CREATE;
                 }
 
@@ -140,11 +143,13 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             throw new RepositoryException(message, e);
         }
 
-        if (!mReadOnly && !builder.getDataHomeFile().canWrite()) {
+        if (!readOnly && !builder.getDataHomeFile().canWrite()) {
             // Allow environment to be created, but databases are read-only.
             // This is only significant if data home differs from environment home.
-            mReadOnly = true;
+            readOnly = true;
         }
+
+        mReadOnly = readOnly;
 
         long deadlockInterval = Math.min(lockTimeout, txnTimeout);
         // Make sure interval is no smaller than 0.5 seconds.
@@ -157,6 +162,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return mEnv;
     }
 
+    @Override
     IsolationLevel selectIsolationLevel(com.amazon.carbonado.Transaction parent,
                                         IsolationLevel level)
     {
@@ -181,6 +187,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return level;
     }
 
+    @Override
     protected DbTxn txn_begin(DbTxn parent, IsolationLevel level) throws Exception {
         int flags = 0;
         if (level == IsolationLevel.READ_UNCOMMITTED) {
@@ -189,6 +196,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return mEnv.txn_begin(parent, flags);
     }
 
+    @Override
     protected DbTxn txn_begin_nowait(DbTxn parent, IsolationLevel level) throws Exception {
         int flags = Db.DB_TXN_NOWAIT;
         if (level == IsolationLevel.READ_UNCOMMITTED) {
@@ -197,41 +205,91 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return mEnv.txn_begin(parent, flags);
     }
 
+    @Override
     protected void txn_commit(DbTxn txn) throws Exception {
         txn.commit(0);
     }
 
+    @Override
     protected void txn_abort(DbTxn txn) throws Exception {
         txn.abort();
     }
 
+    @Override
     protected void env_checkpoint() throws Exception {
         mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
+        removeOldLogFiles();
     }
 
+    @Override
     protected void env_checkpoint(int kBytes, int minutes) throws Exception {
         mEnv.txn_checkpoint(kBytes, minutes, 0);
-        String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
-        if (oldLogFiles != null) {
-            for (String filename : oldLogFiles) {
-                new File(filename).delete();
+        removeOldLogFiles();
+    }
+
+    private void removeOldLogFiles() throws Exception {
+        synchronized (mBackupLock) {
+            if (mBackupCount == 0) {
+                String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
+                if (oldLogFiles != null) {
+                    for (String filename : oldLogFiles) {
+                        new File(filename).delete();
+                    }
+                }
             }
         }
     }
 
+    @Override
     protected void env_detectDeadlocks() throws Exception {
         mEnv.lock_detect(0, Db.DB_LOCK_DEFAULT);
     }
 
+    @Override
     protected void env_close() throws Exception {
         if (mEnv != null) {
             mEnv.close(0);
         }
     }
 
+    @Override
     protected <S extends Storable> BDBStorage<DbTxn, S> createBDBStorage(Class<S> type)
         throws Exception
     {
         return new DB_Legacy_Storage<S>(this, type);
+    }
+
+    @Override
+    void enterBackupMode() throws Exception {
+        // Nothing special to do.
+    }
+
+    @Override
+    void exitBackupMode() throws Exception {
+        // Nothing special to do.
+    }
+
+    @Override
+    File[] backupFiles() throws Exception {
+        Set<File> dbFileSet = new LinkedHashSet<File>();
+
+        for (String dbName : getAllDatabaseNames()) {
+            File file = new File(getDatabaseFileName(dbName));
+            if (!file.isAbsolute()) {
+                file = new File(mEnvHome, file.getPath());
+            }
+            if (!dbFileSet.contains(file) && file.exists()) {
+                dbFileSet.add(file);
+            }
+        }
+
+        for (String logName : mEnv.log_archive(Db.DB_ARCH_ABS | Db.DB_ARCH_LOG)) {
+            File file = new File(logName);
+            if (!dbFileSet.contains(file) && file.exists()) {
+                dbFileSet.add(file);
+            }
+        }
+
+        return dbFileSet.toArray(new File[dbFileSet.size()]);
     }
 }
