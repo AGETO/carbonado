@@ -28,6 +28,8 @@ import com.amazon.carbonado.*;
 @PrimaryKey("id")
 @Indexes({@Index("intProp")})
 public abstract class WithJoinIndex implements Storable {
+    public static volatile int adjust;
+
     public abstract int getId();
     public abstract void setId(int id);
 
@@ -40,7 +42,7 @@ public abstract class WithJoinIndex implements Storable {
 
     @Derived(from="basic.intProp")
     public int getIntProp() throws FetchException {
-        return getBasic().getIntProp();
+        return getBasic().getIntProp() + adjust;
     }
 
     @Alias("WITH_BASIC")

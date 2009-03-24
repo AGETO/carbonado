@@ -27,6 +27,7 @@ import com.amazon.carbonado.*;
 import com.amazon.carbonado.repo.map.MapRepositoryBuilder;
 
 import com.amazon.carbonado.stored.StorableTestBasicCompoundIndexed;
+import com.amazon.carbonado.stored.WithJoinIndex;
 
 /**
  * 
@@ -42,14 +43,54 @@ public class TestIndexRepair extends TestCase {
         return new TestSuite(TestIndexRepair.class);
     }
 
-    private Repository mRepository;
-
     public TestIndexRepair(String name) {
         super(name);
     }
 
     private static Repository buildTempRepository() throws Exception {
         return TestUtilities.buildTempRepository("indexrepair", 1000000, true);
+    }
+
+    public void test_derivedIndex() throws Exception {
+        Repository repo = buildTempRepository();
+
+        Storage<WithJoinIndex> storage = repo.storageFor(WithJoinIndex.class);
+        Storage<WithJoinIndex.Basic> storage2 = repo.storageFor(WithJoinIndex.Basic.class);
+
+        WithJoinIndex obj;
+        WithJoinIndex.Basic obj2;
+
+        obj2 = storage2.prepare();
+        obj2.setId(1);
+        obj2.setIntProp(100);
+        obj2.insert();
+
+        obj = storage.prepare();
+        obj.setId(2);
+        obj.setBasicId(1);
+        obj.insert();
+
+        assertEquals(100, obj.getIntProp());
+
+        WithJoinIndex.adjust = 5;
+        try {
+            // Index is inconsistent now.
+            obj = storage.query("intProp = ?").with(100).loadOne();
+            assertEquals(100 + WithJoinIndex.adjust, obj.getIntProp());
+
+            // Inconsistency should not break update.
+            obj2 = obj.getBasic();
+            obj2.setIntProp(123);
+            obj2.update();
+
+            obj = storage.query("intProp = ?").with(123 + WithJoinIndex.adjust).loadOne();
+            assertEquals(123 + WithJoinIndex.adjust, obj.getIntProp());
+        } finally {
+            WithJoinIndex.adjust = 0;
+        }
+
+        repo.close();
+        repo = null;
     }
 
     public void test_shouldInsert() throws Exception {
