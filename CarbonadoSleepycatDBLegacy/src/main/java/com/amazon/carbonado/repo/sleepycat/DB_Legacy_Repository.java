@@ -194,6 +194,24 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         return mEnv;
     }
 
+    public BDBProduct getBDBProduct() {
+        return BDBProduct.DB_Legacy;
+    }
+
+    public int[] getVersion() {
+        return new int[] {
+            mEnv.get_version_major(), mEnv.get_version_minor(), mEnv.get_version_patch()
+        };
+    }
+
+    public File getHome() {
+        return mEnvHome;
+    }
+
+    public File getDataHome() {
+        return mDataHome == null ? mEnvHome : mDataHome;
+    }
+
     @Override
     IsolationLevel selectIsolationLevel(com.amazon.carbonado.Transaction parent,
                                         IsolationLevel level)
