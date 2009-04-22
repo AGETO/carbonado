@@ -298,7 +298,11 @@ public class TestEncodingStrategy extends TestCase {
         // Encode should return an empty array.
         byte[] encoded = (byte[]) methods[ENCODE_OBJECT_ARRAY]
             .invoke(null, new Object[] {new Object[0]});
-        assertEquals(encoded.length, prefix + suffix);
+
+        // This test previously verified that length == prefix+suffix, but for
+        // GenericStorableCodec encodeSearchKeyPrefix to work it should not
+        // encode the suffix, and besides a key without properties is invalid.
+        assertEquals(encoded.length, prefix);
 
         // Decode should not throw an exception.
         methods[DECODE_OBJECT_ARRAY].invoke(null, new Object[0], encoded);
