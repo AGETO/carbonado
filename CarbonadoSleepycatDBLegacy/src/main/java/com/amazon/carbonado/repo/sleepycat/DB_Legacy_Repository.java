@@ -128,6 +128,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     final DbEnv mEnv;
     final boolean mReadOnly;
+    final Boolean mChecksum;
 
     /**
      * Open the repository using the given BDB repository configuration.
@@ -179,6 +180,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
 
         mReadOnly = readOnly;
+        mChecksum = builder.getChecksumEnabled();
 
         long lockTimeout = builder.getLockTimeoutInMicroseconds();
         long txnTimeout = builder.getTransactionTimeoutInMicroseconds();
@@ -187,7 +189,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         // Make sure interval is no smaller than 0.5 seconds.
         deadlockInterval = Math.max(500000, deadlockInterval) / 1000;
 
-        start(builder.getCheckpointInterval(), deadlockInterval);
+        start(builder.getCheckpointInterval(), deadlockInterval, builder);
     }
 
     public Object getEnvironment() {

@@ -172,16 +172,16 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
     protected Object env_openPrimaryDatabase(DbTxn txn, String name)
         throws Exception
     {
-        return mDatabase = openDb(txn, name, false);
+        return mDatabase = openDb(txn, name);
     }
 
-    private Db openDb(DbTxn txn, String name, boolean allowDups) throws Exception {
+    private Db openDb(DbTxn txn, String name) throws Exception {
         DB_Legacy_Repository dbRepository = (DB_Legacy_Repository) getRepository();
         DbEnv env = dbRepository.mEnv;
 
         Db database = new Db(env, 0);
-        if (allowDups) {
-            database.set_flags(Db.DB_DUPSORT);
+        if (dbRepository.mChecksum != null && dbRepository.mChecksum) {
+            database.set_flags(Db.DB_CHKSUM_SHA1);
         }
 
         Integer pageSize = dbRepository.getDatabasePageSize(getStorableType());
