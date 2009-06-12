@@ -322,12 +322,11 @@ public class TestIndexedQueryAnalyzer extends TestCase {
         // This is actually a pretty terrible plan due to the iterators. This
         // is expected however, since we lied and said we had indexes.
         String expected =
-            "sort: [+order.address.addressCity, +shipmentNotes], [+order.orderTotal]\n" +
+            "sort: [+order.address.addressCity], [+shipmentNotes, +order.orderTotal]\n" +
             "  join: com.amazon.carbonado.stored.Shipment\n" +
             "  ...inner loop: order\n" +
-            "    sort: [+shipmentNotes]\n" +
-            "      filter: shipmentNotes <= Z & orderID = ?\n" +
-            "        collection iterator: com.amazon.carbonado.stored.Shipment\n" +
+            "    filter: shipmentNotes <= Z & orderID = ?\n" +
+            "      collection iterator: com.amazon.carbonado.stored.Shipment\n" +
             "  ...outer loop\n" +
             "    join: com.amazon.carbonado.stored.Order\n" +
             "    ...inner loop: address\n" +
