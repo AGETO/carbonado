@@ -269,25 +269,31 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     @Override
     protected void env_checkpoint() throws Exception {
-        mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
-        removeOldLogFiles();
+        // Disable checkpoints during hot backup. BDB documentation indicates that
+        // checkpoints can run during backup, but testing indicates otherwise.
+        synchronized (mBackupLock) {
+            if (mBackupCount == 0) {
+                mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
+                removeOldLogFiles();
+            }
+        }
     }
 
     @Override
     protected void env_checkpoint(int kBytes, int minutes) throws Exception {
-        mEnv.txn_checkpoint(kBytes, minutes, 0);
-        removeOldLogFiles();
+        synchronized (mBackupLock) {
+            if (mBackupCount == 0) {
+                mEnv.txn_checkpoint(kBytes, minutes, 0);
+                removeOldLogFiles();
+            }
+        }
     }
 
     private void removeOldLogFiles() throws Exception {
-        synchronized (mBackupLock) {
-            if (mBackupCount == 0) {
-                String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
-                if (oldLogFiles != null) {
-                    for (String filename : oldLogFiles) {
-                        new File(filename).delete();
-                    }
-                }
+        String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
+        if (oldLogFiles != null) {
+            for (String filename : oldLogFiles) {
+                new File(filename).delete();
             }
         }
     }
@@ -313,7 +319,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     @Override
     void enterBackupMode() throws Exception {
-        // Nothing special to do.
+        forceCheckpoint();
     }
 
     @Override
