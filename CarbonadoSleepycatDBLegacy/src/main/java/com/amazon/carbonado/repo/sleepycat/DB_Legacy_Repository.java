@@ -33,6 +33,7 @@ import com.sleepycat.db.DbTxn;
 
 import com.amazon.carbonado.ConfigurationException;
 import com.amazon.carbonado.IsolationLevel;
+import com.amazon.carbonado.PersistDeniedException;
 import com.amazon.carbonado.Repository;
 import com.amazon.carbonado.RepositoryException;
 import com.amazon.carbonado.Storable;
@@ -275,6 +276,8 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             if (mBackupCount == 0) {
                 mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
                 removeOldLogFiles();
+            } else {
+                throw new PersistDeniedException("Hot backup in progress");
             }
         }
     }
