@@ -23,6 +23,8 @@ import java.util.List;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.joda.time.DateTime;
+
 import com.amazon.carbonado.filter.Filter;
 
 import com.amazon.carbonado.repo.toy.ToyRepository;
@@ -31,7 +33,7 @@ import com.amazon.carbonado.stored.StorableTestBasic;
 import com.amazon.carbonado.stored.StorableTestBasicIndexed;
 
 /**
- * 
+ *
  *
  * @author Brian S O'Neill
  */
@@ -86,7 +88,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasic.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that "not" again produces everything.
             query = query.not();
             results = query.fetch().toList();
@@ -103,7 +105,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasic.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that order is preserved when "not" again.
             query = query.not();
             assertEquals(Filter.getOpenFilter(StorableTestBasic.class), query.getFilter());
@@ -119,7 +121,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasic.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that order is preserved when "not" again.
             query = query.not();
             assertEquals(Filter.getOpenFilter(StorableTestBasic.class), query.getFilter());
@@ -136,7 +138,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasic> storage =
             getRepository().storageFor(StorableTestBasic.class);
 
-        Query<StorableTestBasic> query; 
+        Query<StorableTestBasic> query;
         List<StorableTestBasic> results;
 
         {
@@ -146,7 +148,7 @@ public class TestQueryLogic extends TestCase {
             Filter<StorableTestBasic> filter2 = query.getFilter();
             query = storage.query("intProp != ? | (stringProp < ? & longProp >= ?)");
             Filter<StorableTestBasic> filter3 = query.getFilter();
-            
+
             assertEquals(filter3, filter2);
         }
 
@@ -206,7 +208,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasic> storage =
             getRepository().storageFor(StorableTestBasic.class);
 
-        Query<StorableTestBasic> query; 
+        Query<StorableTestBasic> query;
         List<StorableTestBasic> results;
 
         {
@@ -307,7 +309,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasic> storage =
             getRepository().storageFor(StorableTestBasic.class);
 
-        Query<StorableTestBasic> query; 
+        Query<StorableTestBasic> query;
         List<StorableTestBasic> results;
 
         {
@@ -428,7 +430,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasicIndexed.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that "not" again produces everything.
             query = query.not();
             results = query.fetch().toList();
@@ -445,7 +447,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasicIndexed.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that order is preserved when "not" again.
             query = query.not();
             assertEquals(Filter.getOpenFilter(StorableTestBasicIndexed.class), query.getFilter());
@@ -461,7 +463,7 @@ public class TestQueryLogic extends TestCase {
             assertEquals(Filter.getClosedFilter(StorableTestBasicIndexed.class), query.getFilter());
             results = query.fetch().toList();
             assertEquals(0, results.size());
-            
+
             // Verify that order is preserved when "not" again.
             query = query.not();
             assertEquals(Filter.getOpenFilter(StorableTestBasicIndexed.class), query.getFilter());
@@ -478,7 +480,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasicIndexed> storage =
             getRepository().storageFor(StorableTestBasicIndexed.class);
 
-        Query<StorableTestBasicIndexed> query; 
+        Query<StorableTestBasicIndexed> query;
         List<StorableTestBasicIndexed> results;
 
         {
@@ -488,7 +490,7 @@ public class TestQueryLogic extends TestCase {
             Filter<StorableTestBasicIndexed> filter2 = query.getFilter();
             query = storage.query("intProp != ? | (stringProp < ? & longProp >= ?)");
             Filter<StorableTestBasicIndexed> filter3 = query.getFilter();
-            
+
             assertEquals(filter3, filter2);
         }
 
@@ -548,7 +550,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasicIndexed> storage =
             getRepository().storageFor(StorableTestBasicIndexed.class);
 
-        Query<StorableTestBasicIndexed> query; 
+        Query<StorableTestBasicIndexed> query;
         List<StorableTestBasicIndexed> results;
 
         {
@@ -649,7 +651,7 @@ public class TestQueryLogic extends TestCase {
         final Storage<StorableTestBasicIndexed> storage =
             getRepository().storageFor(StorableTestBasicIndexed.class);
 
-        Query<StorableTestBasicIndexed> query; 
+        Query<StorableTestBasicIndexed> query;
         List<StorableTestBasicIndexed> results;
 
         {
@@ -747,6 +749,158 @@ public class TestQueryLogic extends TestCase {
         }
     }
 
+    public void test_date_and() throws Exception {
+        final int count = 10;
+        populate(count, new long[] {45, 12, 34, 12, 12, 45, 0, 0, 10, 2});
+
+        final Storage<StorableTestBasic> storage =
+            getRepository().storageFor(StorableTestBasic.class);
+
+        Query<StorableTestBasic> query;
+        List<StorableTestBasic> results;
+
+        {
+            query = storage.query("date >= ?");
+            try {
+                query = query.and("date <= ?");
+                fail();
+            } catch (IllegalStateException e) {
+                // Good. Blank params exist.
+            }
+        }
+
+        // Greater than.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 30, 0, 0));
+
+            results = query.fetch().toList();
+            // Note: Carbonado uses 2-value logic so null is treated as a
+            // regular value, ordered higher than all other values.
+            assertEquals(5, results.size());
+            assertEquals(1, results.get(0).getId());
+            assertEquals(3, results.get(1).getId());
+            assertEquals(6, results.get(2).getId());
+            assertEquals(7, results.get(3).getId());
+            assertEquals(8, results.get(4).getId());
+        }
+
+        // Greater than without null values.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 30, 0, 0));
+            query = query.and("date != ?").with(null);
+
+            results = query.fetch().toList();
+            assertEquals(3, results.size());
+            assertEquals(1, results.get(0).getId());
+            assertEquals(3, results.get(1).getId());
+            assertEquals(6, results.get(2).getId());
+        }
+
+        // Less than.
+        {
+            query = storage.query("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 10, 0, 0));
+
+            results = query.fetch().toList();
+            assertEquals(2, results.size());
+            assertEquals(9, results.get(0).getId());
+            assertEquals(10, results.get(1).getId());
+        }
+
+        // Range.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 2, 0, 0));
+            query = query.and("date < ?").with(
+                new DateTime(2000, 1, 1, 0, 12, 0, 0));
+
+            results = query.fetch().toList();
+            assertEquals(2, results.size());
+            assertEquals(9, results.get(0).getId());
+            assertEquals(10, results.get(1).getId());
+        }
+
+        // Different range.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 45, 0, 0));
+            query = query.and("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 59, 0, 0));
+
+            results = query.fetch().toList();
+            assertEquals(2, results.size());
+            assertEquals(1, results.get(0).getId());
+            assertEquals(6, results.get(1).getId());
+        }
+
+        // Different range with ordering.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 45, 0, 0));
+            query = query.orderBy("-intProp");
+            query = query.and("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 59, 0, 0));
+
+            results = query.fetch().toList();
+            assertEquals(2, results.size());
+            assertEquals(1, results.get(1).getId());
+            assertEquals(6, results.get(0).getId());
+        }
+
+        // Try again with ordering.
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 4, 0, 0));
+            query = query.orderBy("-intProp");
+            query = query.and("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 12, 0, 0));
+
+            results = query.fetch().toList();
+            assertEquals(4, results.size());
+            assertEquals(2, results.get(3).getId());
+            assertEquals(4, results.get(2).getId());
+            assertEquals(5, results.get(1).getId());
+            assertEquals(9, results.get(0).getId());
+        }
+
+        // Invert the selection
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 4, 0, 0));
+            query = query.and("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 12, 0, 0)).not();
+
+            results = query.fetch().toList();
+            assertEquals(count - 4, results.size());
+            assertEquals(1, results.get(0).getId());
+            assertEquals(3, results.get(1).getId());
+            assertEquals(6, results.get(2).getId());
+            assertEquals(7, results.get(3).getId());
+            assertEquals(8, results.get(4).getId());
+            assertEquals(10, results.get(5).getId());
+        }
+
+        // Invert the ordered selection
+        {
+            query = storage.query("date >= ?").with(
+                new DateTime(2000, 1, 1, 0, 4, 0, 0));
+            query = query.orderBy("-intProp");
+            query = query.and("date <= ?").with(
+                new DateTime(2000, 1, 1, 0, 12, 0, 0)).not();
+
+            results = query.fetch().toList();
+            assertEquals(count - 4, results.size());
+            assertEquals(1, results.get(5).getId());
+            assertEquals(3, results.get(4).getId());
+            assertEquals(6, results.get(3).getId());
+            assertEquals(7, results.get(2).getId());
+            assertEquals(8, results.get(1).getId());
+            assertEquals(10, results.get(0).getId());
+        }
+    }
+
     private void populate(int count) throws Exception {
         populate(count, null);
     }
@@ -766,6 +920,9 @@ public class TestQueryLogic extends TestCase {
             stb.setStringProp("str_" + i);
             if (longValues != null && i <= longValues.length) {
                 stb.setLongProp(longValues[i - 1]);
+                if (longValues[i - 1] > 0) {
+                    stb.setDate(new DateTime(2000, 1, 1, 0, (int)longValues[i - 1], 0, 0));
+                }
             }
             stb.insert();
         }
@@ -790,6 +947,9 @@ public class TestQueryLogic extends TestCase {
             stb.setStringProp("str_" + i);
             if (longValues != null && i <= longValues.length) {
                 stb.setLongProp(longValues[i - 1]);
+                if (longValues[i - 1] > 0) {
+                    stb.setDate(new DateTime(2000, 1, 1, 0, (int)longValues[i - 1], 0, 0));
+                }
             }
             stb.insert();
         }
