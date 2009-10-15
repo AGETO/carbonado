@@ -82,6 +82,28 @@ public class TestStorableSerializer extends TestCase {
         stb2.readFrom(din);
 
         assertEquals(stb, stb2);
+        assertEquals(stb.toString(), stb2.toString());
+    }
+
+    public void testReadAndWrite2() throws Exception {
+        Storage<StorableDatePk> storage = mRepository.storageFor(StorableDatePk.class);
+        StorableDatePk s = storage.prepare();
+        s.setId(50);
+        s.setOrderDate(new org.joda.time.DateTime());
+
+        // This should not interfere with date property being set when deserialized.
+        s.markAllPropertiesClean();
+
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        s.writeTo(bout);
+        byte[] bytes = bout.toByteArray();
+
+        ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
+        StorableDatePk s2 = storage.prepare();
+        s2.readFrom(bin);
+
+        assertEquals(s, s2);
+        assertEquals(s.toString(), s2.toString());
     }
 
     /*
