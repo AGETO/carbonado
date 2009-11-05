@@ -19,7 +19,11 @@ package com.amazon.carbonado;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
 import com.amazon.carbonado.repo.sleepycat.BDBRepositoryBuilder;
 
@@ -36,6 +40,8 @@ public class TestUtilities {
     private static final int DEFAULT_CAPACITY = 100000;
 
     private static final Random sRandom = new Random();
+
+    private static final Set<File> cTempFiles = Collections.synchronizedSet(new HashSet<File>());
 
     public static String makeTestDirectoryString(String nameElement) {
         return makeTestDirectory(nameElement).getAbsolutePath();
@@ -173,5 +179,37 @@ public class TestUtilities {
             }
         }
         return buffer.toString();
+    }
+
+    public static File makeTempDir(String prefix) throws IOException {
+        File temp;
+        do {
+            temp = new File(System.getProperty("java.io.tmpdir"),
+                            prefix + '-' + UUID.randomUUID());
+        } while (temp.exists());
+        if (!temp.mkdir()) {
+            throw new IOException("Couldn't create temp directory: " + temp);
+        }
+        cTempFiles.add(temp);
+        return temp;
+    }
+
+    public static void deleteTempDir(File file) {
+        if (!cTempFiles.remove(file)) {
+            // Was not registered, so leave it alone.
+            return;
+        }
+        recursiveDelete(file);
+    }
+
+    private static void recursiveDelete(File file) {
+        if (file.isDirectory()) {
+            for (File f : file.listFiles()) {
+                recursiveDelete(f);
+            }
+        }
+        if (!file.delete()) {
+            System.err.println("Couldn't delete file: " + file);
+        }
     }
 }
