@@ -293,6 +293,14 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     }
 
     private void removeOldLogFiles() throws Exception {
+        try {
+            if (mKeepOldLogFiles) {
+                return;
+            }
+        } catch (NoSuchFieldError e) {
+            // Carbonado package might be older.
+        }
+
         String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
         if (oldLogFiles != null) {
             for (String filename : oldLogFiles) {
