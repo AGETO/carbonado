@@ -119,6 +119,8 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
             if (recovery) {
                 flags |= Db.DB_RECOVER_FATAL;
+            } else if (builder.isPrivate() && !builder.getReadOnly()) {
+                flags |= Db.DB_RUNRECOVERY;
             }
 
             env.open(builder.getEnvironmentHome(), flags, 0);
