@@ -117,15 +117,22 @@ public class TestTransactionManager extends TestCase {
 
         txn2.exit();
 
+        // Thread with txn2 was attached but is inactive, so txn thread can
+        // steal it. Exiting a top-level transaction implicitly detaches
+        // it. This can happen if a remote connection is dropped, but the
+        // thread which is automatically exiting the open transaction isn't the
+        // one which is attached. Detach is not allowed, so it can only exit.
+        txn.attach();
+
         try {
-            txn.attach();
+            txn2.detach();
             fail();
         } catch (IllegalStateException e) {
+            // Cannot detach since attach was stolen. Throwing an exception
+            // here is the correct thing, since it indicates a bug in the
+            // application. The txn2 thread didn't detach properly and it let
+            // the txn thread try to get the transaction.
         }
-
-        txn.detach();
-
-        txn2.detach();
 
         txn.detach();
         txn.attach();
