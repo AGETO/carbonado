@@ -39,6 +39,7 @@ import com.amazon.carbonado.stored.FileInfo;
  *
  * @author Brian S O'Neill
  */
+@org.junit.Ignore
 public class FileInfoTest {
     public static Storage<FileInfo> openStorage(String envHome) throws Exception {
         BDBRepositoryBuilder builder = new BDBRepositoryBuilder();

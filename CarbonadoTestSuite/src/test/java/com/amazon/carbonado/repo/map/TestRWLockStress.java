@@ -26,6 +26,7 @@ import java.util.concurrent.locks.*;
  *
  * @author Brian S O'Neill
  */
+@org.junit.Ignore
 public class TestRWLockStress {
     static long cSharedValue;
 

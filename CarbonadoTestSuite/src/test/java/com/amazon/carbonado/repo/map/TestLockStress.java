@@ -25,6 +25,7 @@ import java.util.*;
  *
  * @author Brian S O'Neill
  */
+@org.junit.Ignore
 public class TestLockStress {
     static long cSharedValue;
 

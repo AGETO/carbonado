@@ -33,6 +33,7 @@ import com.amazon.carbonado.repo.sleepycat.BDBRepositoryBuilder;
  * @author Don Schneider
  * @author Brian S O'Neill
  */
+@org.junit.Ignore
 public class TestUtilities {
     public static final String FILE_PATH_KEY = "filepath";
 
