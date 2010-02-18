@@ -30,6 +30,8 @@ import com.sleepycat.db.DbTxn;
 import com.amazon.carbonado.Storable;
 import com.amazon.carbonado.RepositoryException;
 
+import com.amazon.carbonado.raw.StorableCodecFactory;
+
 import com.amazon.carbonado.txn.TransactionScope;
 
 /**
@@ -144,11 +146,27 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
     }
 
     protected void db_truncate(DbTxn txn) throws Exception {
-        int flags = 0;
-        if (txn == null) {
-            flags |= Db.DB_AUTO_COMMIT;
+        if (txn != null) {
+            mDatabase.truncate(txn, 0);
+            return;
         }
-        mDatabase.truncate(txn, flags);
+
+        DB_Legacy_Repository dbRepository = (DB_Legacy_Repository) getRepository();
+
+        String fileName, dbName;
+        {
+            StorableCodecFactory codecFactory = dbRepository.getStorableCodecFactory();
+            String name = codecFactory.getStorageName(getStorableType());
+            if (name == null) {
+                name = getStorableType().getName();
+            }
+            fileName = dbRepository.getDatabaseFileName(name);
+            dbName = dbRepository.getDatabaseName(name);
+        }
+
+        close();
+        dbRepository.mEnv.dbremove(null, fileName, dbName, 0);
+        open(false, null, false);
     }
 
     protected boolean db_isEmpty(DbTxn txn, Object database, boolean rmw) throws Exception {
