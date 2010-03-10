@@ -98,8 +98,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.h2database</groupId>
-      <artifactId>h2database</artifactId>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
       <version>[1.2,)</version>
       <scope>test</scope>
     </dependency>
