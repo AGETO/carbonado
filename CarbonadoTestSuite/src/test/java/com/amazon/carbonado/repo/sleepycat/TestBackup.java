@@ -64,174 +64,175 @@ public class TestBackup extends TestCase {
         bob.setProduct(mProduct);
         bob.setName("test-backup-" + mProduct);
         bob.setTransactionWriteNoSync(true);
-	bob.setKeepOldLogFiles(true);
-	mDir = TestUtilities.makeTempDir("test-backup-" + mProduct);
+        bob.setKeepOldLogFiles(true);
+        bob.setCacheSize(100000);
+        mDir = TestUtilities.makeTempDir("test-backup-" + mProduct);
         bob.setEnvironmentHomeFile(mDir);
         mRepo = bob.build();
     }
 
     protected void tearDown() throws Exception 
     {  
-	if (mRepo != null) {
+        if (mRepo != null) {
             mRepo.close();
-	    mRepo = null;
+            mRepo = null;
         }
-	if (mDir != null) {
-	    TestUtilities.deleteTempDir(mDir);
-	}
+        if (mDir != null) {
+            TestUtilities.deleteTempDir(mDir);
+        }
 
-	if (mBackupRepo != null) {
+        if (mBackupRepo != null) {
             mBackupRepo.close();
-	    mBackupRepo = null;
+            mBackupRepo = null;
         }
-	if (mBackupDir != null) {
-	    TestUtilities.deleteTempDir(mBackupDir);
-	}
+        if (mBackupDir != null) {
+            TestUtilities.deleteTempDir(mBackupDir);
+        }
     }
 
     public void testBackupJE() throws Exception {
-	mProduct = "JE";
-	createBackup();
-	mBackupDir = TestUtilities.makeTempDir("test-backup-JE-backup");
-	backup();
+        mProduct = "JE";
+        createBackup();
+        mBackupDir = TestUtilities.makeTempDir("test-backup-JE-backup");
+        backup();
     }
 
     public void testBackupCore() throws Exception {
-	mProduct = "DB";
-	createBackup();
-	mBackupDir = TestUtilities.makeTempDir("test-backup-DB-backup");
-	backup();
+        mProduct = "DB";
+        createBackup();
+        mBackupDir = TestUtilities.makeTempDir("test-backup-DB-backup");
+        backup();
     }
     
     public void backup() throws Exception {
         Storage<StorableTestBasic> storage = mRepo.storageFor(StorableTestBasic.class);
-	StorableTestBasic stb;
+        StorableTestBasic stb;
 
-	for (int i = 0; i < 100; ++i) {
-	    stb = storage.prepare();
-	    stb.setId(i);
+        for (int i = 0; i < 100; ++i) {
+            stb = storage.prepare();
+            stb.setId(i);
             stb.setStringProp("oldhello");
             stb.setIntProp(3);
             stb.setLongProp(22);
             stb.setDoubleProp(234.2);
-	    assertTrue(stb.tryInsert());
-	}
+            assertTrue(stb.tryInsert());
+        }
 
-	HotBackupCapability cap = mRepo.getCapability(HotBackupCapability.class);
-	if (cap == null) {
-	    fail();
-	}
+        HotBackupCapability cap = mRepo.getCapability(HotBackupCapability.class);
+        if (cap == null) {
+            fail();
+        }
 
-	try {
-	    HotBackupCapability.Backup b = cap.startIncrementalBackup(-1);
-	    fail();
-	} catch (Exception e) {
-	    // expected
-	}
+        try {
+            HotBackupCapability.Backup b = cap.startIncrementalBackup(-1);
+            fail();
+        } catch (Exception e) {
+            // expected
+        }
 
-	HotBackupCapability.Backup b = cap.startBackup();
+        HotBackupCapability.Backup b = cap.startBackup();
 
-	if (b == null) {
-	    fail();
-	}
+        if (b == null) {
+            fail();
+        }
 
-	File [] files = b.getFiles();
-	int fullBackupLength = 0;
-	for (File f : files) {
-	    fullBackupLength+=f.length();
-	}
-	long lastLogNumber = b.getLastLogNumber();
-	b.endBackup();
-	
-	HotBackupCapability.Backup incrementalB = cap.startIncrementalBackup(lastLogNumber);
-	File[] files2 = incrementalB.getFiles();
-	int numFiles = 0;
-	int noChangesLength = 0;
-	for (File f : files2) {
-	    noChangesLength += f.length();
-	    ++numFiles;
-	} 
-	assertEquals(1, numFiles);
-	
-	// move the backup files into a new directory
-	OutputStream out;
-	byte[] buf = new byte[1024];
-	int len;
-	InputStream in;
-	for (File f : files) {
-	    in = new FileInputStream(f);
-	    File newFile = new File(mBackupDir, f.getName());
-	    OutputStream outStream = new FileOutputStream(newFile);
-	    int amt;
-	    while((amt = in.read(buf)) > 0) {
-		outStream.write(buf, 0, amt);
-	    }
-	    in.close();
-	    outStream.close();
-	}
-	
-	for (int i = 100; i < 110; ++i) {
-	    stb = storage.prepare();
-	    stb.setId(i);
+        File [] files = b.getFiles();
+        int fullBackupLength = 0;
+        for (File f : files) {
+            fullBackupLength+=f.length();
+        }
+        long lastLogNumber = b.getLastLogNumber();
+        b.endBackup();
+        
+        HotBackupCapability.Backup incrementalB = cap.startIncrementalBackup(lastLogNumber);
+        File[] files2 = incrementalB.getFiles();
+        int numFiles = 0;
+        int noChangesLength = 0;
+        for (File f : files2) {
+            noChangesLength += f.length();
+            ++numFiles;
+        } 
+        assertEquals(1, numFiles);
+        
+        // move the backup files into a new directory
+        OutputStream out;
+        byte[] buf = new byte[1024];
+        int len;
+        InputStream in;
+        for (File f : files) {
+            in = new FileInputStream(f);
+            File newFile = new File(mBackupDir, f.getName());
+            OutputStream outStream = new FileOutputStream(newFile);
+            int amt;
+            while((amt = in.read(buf)) > 0) {
+                outStream.write(buf, 0, amt);
+            }
+            in.close();
+            outStream.close();
+        }
+        
+        for (int i = 100; i < 110; ++i) {
+            stb = storage.prepare();
+            stb.setId(i);
             stb.setStringProp("hello");
             stb.setIntProp(3);
             stb.setLongProp(22);
             stb.setDoubleProp(234.2);
-	    assertTrue(stb.tryInsert());
-	}
+            assertTrue(stb.tryInsert());
+        }
 
-	for (int i = 0; i < 10; ++i) {
-	    stb = storage.prepare();
-	    stb.setId(i);
-	    assertTrue(stb.tryLoad());
-	    stb.setStringProp("randomprop");
-	    assertTrue(stb.tryUpdate()); // update to check log file order
-	    stb.setStringProp("newprop");
-	    assertTrue(stb.tryUpdate());
-	}
-	incrementalB.endBackup();
+        for (int i = 0; i < 10; ++i) {
+            stb = storage.prepare();
+            stb.setId(i);
+            assertTrue(stb.tryLoad());
+            stb.setStringProp("randomprop");
+            assertTrue(stb.tryUpdate()); // update to check log file order
+            stb.setStringProp("newprop");
+            assertTrue(stb.tryUpdate());
+        }
+        incrementalB.endBackup();
 
-	incrementalB = cap.startIncrementalBackup(lastLogNumber, true);
-	File [] files1 = incrementalB.getFiles();
-	int moreChangesLength = 0;
-	for (File f : files1) {
-	    moreChangesLength += f.length();
-	}
+        incrementalB = cap.startIncrementalBackup(lastLogNumber, true);
+        File [] files1 = incrementalB.getFiles();
+        int moreChangesLength = 0;
+        for (File f : files1) {
+            moreChangesLength += f.length();
+        }
 
-	// Now put the incremental backup files into the backup directory
-	for (File f : files1) {
-	    in = new FileInputStream(f);
-	    File newFile = new File(mBackupDir, f.getName());
-	    OutputStream outStream = new FileOutputStream(newFile);
-	    int amt;
-	    while((amt = in.read(buf)) > 0) {
-		outStream.write(buf, 0, amt);
-	    }
-	    in.close();
-	    outStream.close();
-	    assertEquals(f.length(), newFile.length());
-	}
-	incrementalB.endBackup();
+        // Now put the incremental backup files into the backup directory
+        for (File f : files1) {
+            in = new FileInputStream(f);
+            File newFile = new File(mBackupDir, f.getName());
+            OutputStream outStream = new FileOutputStream(newFile);
+            int amt;
+            while((amt = in.read(buf)) > 0) {
+                outStream.write(buf, 0, amt);
+            }
+            in.close();
+            outStream.close();
+            assertEquals(f.length(), newFile.length());
+        }
+        incrementalB.endBackup();
 
-	BDBRepositoryBuilder bob = new BDBRepositoryBuilder();
+        BDBRepositoryBuilder bob = new BDBRepositoryBuilder();
         bob.setProduct(mProduct);
         bob.setName("test-backup" + mProduct);
         bob.setCacheSize(100000);
         bob.setEnvironmentHomeFile(mBackupDir);
-	bob.setRunFullRecovery(true);
+        bob.setRunFullRecovery(true);
         mBackupRepo = bob.build();
-	Storage<StorableTestBasic> backupStorage = mBackupRepo.storageFor(StorableTestBasic.class);
-	for (int i = 0; i < 10; ++i) {
-	    StorableTestBasic s = backupStorage.prepare();
-	    s.setId(i);
-	    assertTrue(s.tryLoad());
-	    assertEquals("newprop", s.getStringProp());
-	}
+        Storage<StorableTestBasic> backupStorage = mBackupRepo.storageFor(StorableTestBasic.class);
+        for (int i = 0; i < 10; ++i) {
+            StorableTestBasic s = backupStorage.prepare();
+            s.setId(i);
+            assertTrue(s.tryLoad());
+            assertEquals("newprop", s.getStringProp());
+        }
 
-	for (int i = 100; i < 110; ++i) {
-	    StorableTestBasic s = backupStorage.prepare();
-	    s.setId(i);
-	    assertTrue(s.tryLoad());
-	}
+        for (int i = 100; i < 110; ++i) {
+            StorableTestBasic s = backupStorage.prepare();
+            s.setId(i);
+            assertTrue(s.tryLoad());
+        }
     }
 }
