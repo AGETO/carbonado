@@ -331,8 +331,12 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     }
 
     @Override
-    void enterBackupMode() throws Exception {
+    void enterBackupMode(boolean deleteOldLogFiles) throws Exception {
         forceCheckpoint();
+        if (deleteOldLogFiles && mBackupCount == 0 && mIncrementalBackupCount == 0) {
+            // if we are not auto-deleting old log files delete files if prompted
+            deleteOldLogFiles(-1); // to delete all
+        }
     }
 
     @Override
@@ -341,26 +345,97 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     }
 
     @Override
-    File[] backupFiles() throws Exception {
+    void enterIncrementalBackupMode(long lastLogNumber, boolean deleteOldLogFiles)
+        throws Exception
+    {
+        if (!mKeepOldLogFiles) {
+            throw new IllegalStateException
+                ("Incremental backup requires old log files to be kept");
+        }
+        mEnv.log_flush(null);
+        if (deleteOldLogFiles && lastLogNumber > 0 &&
+            mBackupCount == 0 && mIncrementalBackupCount == 0)
+        {
+            deleteOldLogFiles(lastLogNumber);
+        }
+    }
+
+    @Override
+    void exitIncrementalBackupMode() throws Exception {
+        // Nothing special to do.
+    }
+
+    @Override
+    File[] backupFiles(long[] newLastLogNum) throws Exception {
         Set<File> dbFileSet = new LinkedHashSet<File>();
 
         for (String dbName : getAllDatabaseNames()) {
             File file = new File(getDatabaseFileName(dbName));
             if (!file.isAbsolute()) {
-                file = new File(mEnvHome, file.getPath());
+                file = new File(mDataHome, file.getPath());
             }
             if (!dbFileSet.contains(file) && file.exists()) {
                 dbFileSet.add(file);
             }
         }
 
+        // Find highest log number - all logs before this can be removed if 
+        // user specifies so in the future.
+        long maxLogNum = 0;
         for (String logName : mEnv.log_archive(Db.DB_ARCH_ABS | Db.DB_ARCH_LOG)) {
             File file = new File(logName);
+            long currLogNum = getLogFileNum(file.getName());
             if (!dbFileSet.contains(file) && file.exists()) {
                 dbFileSet.add(file);
+                if (currLogNum > maxLogNum) {
+                    maxLogNum = currLogNum;
+                }
             }
         }
 
+        newLastLogNum[0] = maxLogNum;
+
         return dbFileSet.toArray(new File[dbFileSet.size()]);
+    }
+
+    @Override
+    File[] incrementalBackup(long lastLogNum, long[] newLastLogNum) throws Exception {
+        Set<File> dbFileSet = new LinkedHashSet<File>();        
+        long maxLogNum = 0;
+        for (String logName : mEnv.log_archive(Db.DB_ARCH_ABS | Db.DB_ARCH_LOG)) {
+            File file = new File(logName);
+            long currLogNum = getLogFileNum(file.getName());
+            if (currLogNum >= lastLogNum) { // only copy new files
+                if (!dbFileSet.contains(file) && file.exists()) {
+                    dbFileSet.add(file);           
+                    if (currLogNum > maxLogNum) {
+                        maxLogNum = currLogNum;
+                    }
+                }
+            } 
+        }
+
+        newLastLogNum[0] = maxLogNum;
+
+        return dbFileSet.toArray(new File[dbFileSet.size()]);
+    }
+
+    private void deleteOldLogFiles(long maxLogNum) throws Exception {
+        String[] oldLogFiles = mEnv.log_archive(Db.DB_ARCH_ABS);
+        if (oldLogFiles != null) {
+            for (String logName : oldLogFiles) {
+                File file = new File(logName);
+                long currLogNum = getLogFileNum(file.getName());
+                if (currLogNum < maxLogNum) {
+                    // file no longer in use so delete it
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    private long getLogFileNum(String fileName) {
+        int ix = fileName.indexOf(".");
+        return Long.parseLong(fileName.substring(ix + 1));
     }
 }
