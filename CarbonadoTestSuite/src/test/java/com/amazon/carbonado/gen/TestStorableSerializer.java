@@ -23,6 +23,8 @@ import java.io.*;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.joda.time.DateTime;
+
 import com.amazon.carbonado.*;
 import com.amazon.carbonado.lob.*;
 
@@ -225,6 +227,38 @@ public class TestStorableSerializer extends TestCase {
     }
     */
 
+    public void testAdaptedPkProperty() throws Exception {
+        // Make sure that adapted property in pk can be read back, even if
+        // current property is clean. This is a test for a bug fix.
+        Storage<TheDate> storage = mRepository.storageFor(TheDate.class);
+        DateTime date = new DateTime();
+        TheDate d = storage.prepare();
+        d.setId(1);
+        d.setDate(date);
+        d.setValue("hello");
+        d.insert();
+
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        DataOutputStream dout = new DataOutputStream(bout);
+
+        d.writeTo(dout);
+        dout.flush();
+
+        byte[] bytes = bout.toByteArray();
+
+        d = storage.prepare();
+        d.setId(1);
+        d.setDate(date);
+        // Properties are clean.
+        d.load();
+
+        ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
+        DataInputStream din = new DataInputStream(bin);
+
+        // No exception thrown.
+        d.readFrom(din);
+    }
+
     @PrimaryKey("id")
     public static abstract class ManyProperties implements Storable {
         public abstract int getId();
@@ -379,5 +413,17 @@ public class TestStorableSerializer extends TestCase {
 
         public abstract int getProp47();
         public abstract void setProp47(int v);
+    }
+
+    @PrimaryKey({"id", "date"})
+    public static interface TheDate extends Storable {
+        long getId();
+        void setId(long id);
+
+        DateTime getDate();
+        void setDate(DateTime date);
+
+        String getValue();
+        void setValue(String value);
     }
 }
