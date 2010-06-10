@@ -272,14 +272,10 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     @Override
     protected void env_checkpoint() throws Exception {
-        // Disable checkpoints during hot backup. BDB documentation indicates that
-        // checkpoints can run during backup, but testing indicates otherwise.
         synchronized (mBackupLock) {
+            mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
             if (mBackupCount == 0) {
-                mEnv.txn_checkpoint(0, 0, Db.DB_FORCE);
                 removeOldLogFiles();
-            } else {
-                throw new PersistDeniedException("Hot backup in progress");
             }
         }
     }
@@ -287,8 +283,8 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     @Override
     protected void env_checkpoint(int kBytes, int minutes) throws Exception {
         synchronized (mBackupLock) {
+            mEnv.txn_checkpoint(kBytes, minutes, 0);
             if (mBackupCount == 0) {
-                mEnv.txn_checkpoint(kBytes, minutes, 0);
                 removeOldLogFiles();
             }
         }
@@ -366,7 +362,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
     }
 
     @Override
-    File[] backupFiles(long[] newLastLogNum) throws Exception {
+    File[] backupDataFiles() throws Exception {
         Set<File> dbFileSet = new LinkedHashSet<File>();
 
         for (String dbName : getAllDatabaseNames()) {
@@ -378,6 +374,13 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
                 dbFileSet.add(file);
             }
         }
+
+        return dbFileSet.toArray(new File[dbFileSet.size()]);
+    }
+
+    @Override
+    File[] backupLogFiles(long[] newLastLogNum) throws Exception {
+        Set<File> dbFileSet = new LinkedHashSet<File>();
 
         // Find highest log number - all logs before this can be removed if 
         // user specifies so in the future.
