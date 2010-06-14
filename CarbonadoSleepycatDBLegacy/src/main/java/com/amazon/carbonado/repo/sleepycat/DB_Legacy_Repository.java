@@ -290,6 +290,11 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
     }
 
+    @Override
+    protected void env_sync() throws Exception {
+        mEnv.log_flush(null);
+    }
+
     private void removeOldLogFiles() throws Exception {
         try {
             if (mKeepOldLogFiles) {
