@@ -31,6 +31,8 @@ import org.apache.commons.dbcp.BasicDataSource;
 
 import com.amazon.carbonado.*;
 
+import com.amazon.carbonado.capability.ShutdownCapability;
+
 import com.amazon.carbonado.lob.*;
 
 import com.amazon.carbonado.repo.indexed.IndexedRepositoryBuilder;
@@ -58,6 +60,21 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
 
     public TestH2(String name) {
         super(name);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        Repository repo = getRepository();
+        JDBCConnectionCapability cap = repo.getCapability(JDBCConnectionCapability.class);
+        if (cap == null) {
+            super.tearDown();
+        } else {
+            ShutdownCapability cap2 = repo.getCapability(ShutdownCapability.class);
+            if (cap2 != null) {
+                cap2.setAutoShutdownEnabled(false);
+            }
+            cap.getConnection().createStatement().execute("SHUTDOWN IMMEDIATELY");
+        }
     }
 
     public void test_propertyOther() throws Exception {
