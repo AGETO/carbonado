@@ -18,6 +18,13 @@
 
 package com.amazon.carbonado.repo.replicated;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -389,7 +396,7 @@ public class TestRepair extends TestCase {
 
         final String recordName = "test.TheTestRecord";
 
-        Class<? extends StorableTestMinimal> type0 = 
+        final Class<? extends StorableTestMinimal> type0 = 
             TestLayout.defineStorable(recordName, 1, TypeDesc.INT);
 
         Class<? extends StorableTestMinimal> type1 = 
@@ -495,6 +502,37 @@ public class TestRepair extends TestCase {
             }
             fail();
         } catch (CorruptEncodingException e) {
+            // Verify serialization of primary key storable.
+            assertNotNull(e.getStorableWithPrimaryKey());
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bout);
+            out.writeObject(e);
+            out.close();
+            byte[] bytes = bout.toByteArray();
+
+            ByteArrayInputStream bin = new ByteArrayInputStream(bytes);
+
+            ObjectInputStream in = new ObjectInputStream(bin) {
+                // Special handling to load generated class.
+                @Override
+                protected Class<?> resolveClass(ObjectStreamClass desc)
+                    throws IOException, ClassNotFoundException
+                {
+                    if (desc.getName().equals(recordName)) {
+                        return type0;
+                    }
+                    return super.resolveClass(desc);
+                }
+            };
+
+            CorruptEncodingException e2 = (CorruptEncodingException) in.readObject();
+
+            Storable s1 = e.getStorableWithPrimaryKey();
+            Storable s2 = e2.getStorableWithPrimaryKey();
+
+            assertFalse(s1 == s2);
+            assertTrue(s1.equalPrimaryKeys(s2));
+            assertTrue(s2.equalPrimaryKeys(s1));
         }
 
         // Resync to repair.
