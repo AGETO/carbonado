@@ -184,7 +184,18 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
 
         mReadOnly = readOnly;
-        mReverseSplitOff = builder.isReverseSplitOff();
+
+        {
+            boolean off;
+            try {
+                off = builder.isReverseSplitOff();
+            } catch (NoSuchMethodError e) {
+                // Carbonado package might be older.
+                off = false;
+            }
+            mReverseSplitOff = off;
+        }
+
         mChecksum = builder.getChecksumEnabled();
 
         long lockTimeout = builder.getLockTimeoutInMicroseconds();
