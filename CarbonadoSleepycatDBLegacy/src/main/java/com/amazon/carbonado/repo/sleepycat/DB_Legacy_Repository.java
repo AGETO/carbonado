@@ -131,6 +131,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     final DbEnv mEnv;
     final boolean mReadOnly;
+    final boolean mReverseSplitOff;
     final Boolean mChecksum;
 
     /**
@@ -183,6 +184,7 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
         }
 
         mReadOnly = readOnly;
+        mReverseSplitOff = builder.isReverseSplitOff();
         mChecksum = builder.getChecksumEnabled();
 
         long lockTimeout = builder.getLockTimeoutInMicroseconds();

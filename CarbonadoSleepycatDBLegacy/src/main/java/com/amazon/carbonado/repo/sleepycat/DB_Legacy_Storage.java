@@ -198,8 +198,17 @@ class DB_Legacy_Storage<S extends Storable> extends BDBStorage<DbTxn, S> {
         DbEnv env = dbRepository.mEnv;
 
         Db database = new Db(env, 0);
-        if (dbRepository.mChecksum != null && dbRepository.mChecksum) {
-            database.set_flags(Db.DB_CHKSUM_SHA1);
+        {
+            int flags = 0;
+            if (dbRepository.mReverseSplitOff) {
+                flags |= Db.DB_REVSPLITOFF;
+            }
+            if (dbRepository.mChecksum != null && dbRepository.mChecksum) {
+                flags |= Db.DB_CHKSUM_SHA1;
+            }
+            if (flags != 0) {
+                database.set_flags(flags);
+            }
         }
 
         Integer pageSize = dbRepository.getDatabasePageSize(getStorableType());
