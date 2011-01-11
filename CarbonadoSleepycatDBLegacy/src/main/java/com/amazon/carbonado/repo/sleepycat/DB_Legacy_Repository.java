@@ -85,6 +85,10 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             env.set_cachesize(gbytes, bytes, 0);
         }
 
+        if (builder.getTransactionMaxActive() != null) {
+            env.set_tx_max(builder.getTransactionMaxActive());
+        }
+
         {
             int flags = 0;
 
