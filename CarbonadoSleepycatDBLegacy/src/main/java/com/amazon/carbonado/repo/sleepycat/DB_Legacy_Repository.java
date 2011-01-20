@@ -85,8 +85,12 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             env.set_cachesize(gbytes, bytes, 0);
         }
 
-        if (builder.getTransactionMaxActive() != null) {
-            env.set_tx_max(builder.getTransactionMaxActive());
+        try {
+            if (builder.getTransactionMaxActive() != null) {
+                env.set_tx_max(builder.getTransactionMaxActive());
+            }
+        } catch (NoSuchMethodError e) {
+            // Carbonado package might be older.
         }
 
         {
