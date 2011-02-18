@@ -20,6 +20,7 @@ package com.amazon.carbonado.repo.sleepycat;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.PrintStream;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -236,6 +237,12 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
 
     public File getDataHome() {
         return mDataHome == null ? mEnvHome : mDataHome;
+    }
+
+    @Override
+    boolean verify(PrintStream out) throws Exception {
+        // Not supported.
+        return false;
     }
 
     @Override
