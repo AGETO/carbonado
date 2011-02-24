@@ -54,4 +54,8 @@ public class ToyTransaction implements Transaction {
 
     public void attach() {
     }
+
+    public boolean preCommit() {
+        return true;
+    }
 }
