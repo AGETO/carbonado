@@ -86,6 +86,19 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             env.set_cachesize(gbytes, bytes, 0);
         }
 
+        // Set the log region size to the caller specified size, or to 0,
+        // which defaults to the BDB default size.
+        try {
+            Integer logRegionSize = builder.getLogRegionSize();
+            if (logRegionSize == null) {
+                env.set_lg_regionmax(0);
+            } else {
+                env.set_lg_regionmax(logRegionSize);
+            }
+        } catch (NoSuchMethodError e) {
+            // Carbonado package might be older.
+        }
+
         try {
             if (builder.getTransactionMaxActive() != null) {
                 env.set_tx_max(builder.getTransactionMaxActive());
