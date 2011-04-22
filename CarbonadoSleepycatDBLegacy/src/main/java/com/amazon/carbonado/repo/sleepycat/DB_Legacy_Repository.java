@@ -48,6 +48,7 @@ import com.amazon.carbonado.Storable;
  * @author Brian S O'Neill
  */
 class DB_Legacy_Repository extends BDBRepository<DbTxn> {
+    private static final int DEFAULT_LOG_REGION_SIZE = 256 * 1024;
 
     // Default cache size, in bytes.
     private static final int DEFAULT_CACHE_SIZE = 60 * 1024 * 1024;
@@ -86,15 +87,10 @@ class DB_Legacy_Repository extends BDBRepository<DbTxn> {
             env.set_cachesize(gbytes, bytes, 0);
         }
 
-        // Set the log region size to the caller specified size, or to 0,
-        // which defaults to the BDB default size.
+        // Use the caller specified log region size, or our own default.
         try {
             Integer logRegionSize = builder.getLogRegionSize();
-            if (logRegionSize == null) {
-                env.set_lg_regionmax(0);
-            } else {
-                env.set_lg_regionmax(logRegionSize);
-            }
+            env.set_lg_regionmax(logRegionSize != null ? logRegionSize : DEFAULT_LOG_REGION_SIZE);
         } catch (NoSuchMethodError e) {
             // Carbonado package might be older.
         }
