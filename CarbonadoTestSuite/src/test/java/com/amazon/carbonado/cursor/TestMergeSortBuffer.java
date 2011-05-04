@@ -18,6 +18,8 @@
 
 package com.amazon.carbonado.cursor;
 
+import java.lang.reflect.UndeclaredThrowableException;
+
 import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Random;
@@ -148,6 +150,15 @@ public class TestMergeSortBuffer extends TestCase {
         testBuffer(null, HUGE_BUFFER_SIZE);
     }
 
+    public void testHugeWithTimeout() throws Exception {
+        try {
+            testBuffer(null, HUGE_BUFFER_SIZE, Query.Timeout.millis(100));
+            fail();
+        } catch (UndeclaredThrowableException e) {
+            assertTrue(e.getCause() instanceof FetchInterruptedException);
+        }
+    }
+
     public void testLobs() throws Exception {
         Comparator<StorableWithLobs> c = BeanComparator.forClass(StorableWithLobs.class)
             .orderBy("-id");
@@ -179,8 +190,18 @@ public class TestMergeSortBuffer extends TestCase {
         buffer.close();
     }
 
-    private void testBuffer(Storage<StorableTestBasic> storage, int size) throws Exception {
-        SortBuffer<StorableTestBasic> buffer = new MergeSortBuffer<StorableTestBasic>(storage);
+    private void testBuffer(Storage<StorableTestBasic> storage, int size)
+        throws Exception
+    {
+        testBuffer(storage, size, null);
+    }
+
+    private void testBuffer(Storage<StorableTestBasic> storage, int size,
+                            Query.Controller controller)
+        throws Exception
+    {
+        SortBuffer<StorableTestBasic> buffer =
+            new MergeSortBuffer<StorableTestBasic>(storage, controller);
         buffer.prepare(mComparator);
 
         if (storage == null) {

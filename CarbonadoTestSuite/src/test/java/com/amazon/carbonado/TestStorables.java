@@ -233,7 +233,6 @@ public class TestStorables extends TestCase {
         catch (UniqueConstraintException e) {
         }
 
-
         Storage<StorableTestMultiPK> storageMPK =
                 getRepository().storageFor(StorableTestMultiPK.class);
         StorableTestMultiPK smpk = storageMPK.prepare();
@@ -250,7 +249,6 @@ public class TestStorables extends TestCase {
     }
 
     public void test_storableStorableStates() throws Exception {
-
         Storage<StorableTestKeyValue> storageMinimal =
             getRepository().storageFor(StorableTestKeyValue.class);
 
@@ -3452,6 +3450,67 @@ public class TestStorables extends TestCase {
 
         order = query.with(1234).with(1).tryLoadOne();
         assertNull(order);
+    }
+
+    public void test_countTimeout() throws Exception {
+        Storage<StorableTestMinimal> storage =
+            getRepository().storageFor(StorableTestMinimal.class);
+
+        Transaction txn = getRepository().enterTransaction();
+        try {
+            for (int i=0; i<100000; i++) {
+                StorableTestMinimal min = storage.prepare();
+                min.setId(i);
+                min.insert();
+                if (i % 100 == 0) {
+                    txn.commit();
+                }
+            }
+            txn.commit();
+        } finally {
+            txn.exit();
+        }
+
+        try {
+            // Use filter to bypass optimizations.
+            storage.query("id >= ?").with(0).count(Query.Timeout.millis(1));
+            fail();
+        } catch (FetchInterruptedException e) {
+        }
+    }
+
+    public void test_fetchTimeout() throws Exception {
+        Storage<StorableTestBasic> storage =
+            getRepository().storageFor(StorableTestBasic.class);
+
+        Transaction txn = getRepository().enterTransaction();
+        try {
+            for (int i=0; i<100000; i++) {
+                StorableTestBasic stb = storage.prepare();
+                stb.setId(i);
+                stb.setStringProp("str " + Math.random());
+                stb.setIntProp(i);
+                stb.setLongProp(i);
+                stb.setDoubleProp(i);
+                stb.insert();
+                if (i % 100 == 0) {
+                    txn.commit();
+                }
+            }
+            txn.commit();
+        } finally {
+            txn.exit();
+        }
+
+        try {
+            Cursor<StorableTestBasic> cursor =
+                storage.query().orderBy("stringProp").fetch(Query.Timeout.millis(1));
+            while (cursor.hasNext()) {
+                cursor.next();
+            }
+            fail();
+        } catch (FetchInterruptedException e) {
+        }
     }
 
     private void assertUninitialized(boolean expected, Storable storable, String... properties) {

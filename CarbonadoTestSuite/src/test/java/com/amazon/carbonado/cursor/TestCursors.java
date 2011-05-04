@@ -28,6 +28,8 @@ import junit.framework.TestSuite;
 
 import com.amazon.carbonado.Cursor;
 import com.amazon.carbonado.FetchException;
+import com.amazon.carbonado.FetchInterruptedException;
+import com.amazon.carbonado.Query;
 
 import com.amazon.carbonado.stored.Dummy;
 import com.amazon.carbonado.stored.StorableTestMinimal;
@@ -446,6 +448,23 @@ public class TestCursors extends TestCase {
         compareElements(diff, 1, 1, 1, 1, 2, 3, 3, 3, 3, 4, 4, 4);
     }
 
+    public void testFetchTimeout() throws Exception {
+        Infinite inf = new Infinite();
+        long start = System.nanoTime();
+        Cursor<Element> cursor = ControllerCursor.apply(inf, Query.Timeout.seconds(2));
+        try {
+            while (cursor.hasNext()) {
+                cursor.next();
+            }
+            fail();
+        } catch (FetchInterruptedException e) {
+            long end = System.nanoTime();
+            assertTrue(inf.mClosed);
+            double duration = (end - start) / 1000000000.0d;
+            assertTrue(1.5 <= duration && duration <= 2.5);
+        }
+    }
+
     private Cursor<Element> createElements(int... ids) {
         Arrays.sort(ids);
         Element[] elements = new Element[ids.length];
@@ -509,6 +528,23 @@ public class TestCursors extends TestCase {
                 return 1;
             }
             return 0;
+        }
+    }
+
+    private static class Infinite extends AbstractCursor<Element> {
+        private int mID;
+        boolean mClosed;
+
+        public boolean hasNext() {
+            return true;
+        }
+
+        public Element next() {
+            return new Element(++mID);
+        }
+
+        public void close() {
+            mClosed = true;
         }
     }
 }

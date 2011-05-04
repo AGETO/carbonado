@@ -741,6 +741,12 @@ public class TestIndexedQueryExecutor extends TestCase {
             throw new UnsupportedOperationException();
         }
 
+        public Cursor<S> fetchFromIndexEntryQuery(StorableIndex<S> index, Query<?> indexEntryQuery,
+                                                  Query.Controller controller)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public Cursor<S> fetchSubset(StorableIndex<S> index,
                                      Object[] identityValues,
                                      BoundaryType rangeStartBoundary,
@@ -760,6 +766,26 @@ public class TestIndexedQueryExecutor extends TestCase {
 
             Collection<S> empty = Collections.emptyList();
             return new IteratorCursor<S>(empty);
+        }
+
+        public Cursor<S> fetchSubset(StorableIndex<S> index,
+                                     Object[] identityValues,
+                                     BoundaryType rangeStartBoundary,
+                                     Object rangeStartValue,
+                                     BoundaryType rangeEndBoundary,
+                                     Object rangeEndValue,
+                                     boolean reverseRange,
+                                     boolean reverseOrder,
+                                     Query.Controller controller)
+        {
+            return fetchSubset(index,
+                               identityValues,
+                               rangeStartBoundary,
+                               rangeStartValue,
+                               rangeEndBoundary,
+                               rangeEndValue,
+                               reverseRange,
+                               reverseOrder);
         }
     }
 }

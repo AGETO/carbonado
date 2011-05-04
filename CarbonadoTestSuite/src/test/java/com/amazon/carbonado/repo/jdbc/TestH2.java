@@ -383,6 +383,11 @@ public class TestH2 extends com.amazon.carbonado.TestStorables {
     }
 
     @Override
+    public void test_countTimeout() throws Exception {
+        // Timeout granularity is too high. (one second)
+    }
+
+    @Override
     protected BigInteger expected(BigInteger bi) {
         // Used to detect that BigIntegerAdapter was selected.
         return bi.add(BigInteger.ONE);

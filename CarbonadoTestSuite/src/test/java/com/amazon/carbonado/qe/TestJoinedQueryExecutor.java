@@ -252,7 +252,15 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             return new ArraySortBuffer<S>();
         }
 
+        public SortBuffer<S> createSortBuffer(Query.Controller controller) {
+            return new ArraySortBuffer<S>();
+        }
+
         public long countAll() {
+            throw new UnsupportedOperationException();
+        }
+
+        public long countAll(Query.Controller controller) {
             throw new UnsupportedOperationException();
         }
 
@@ -260,7 +268,17 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             throw new UnsupportedOperationException();
         }
 
+        public Cursor<S> fetchAll(Query.Controller controller) {
+            throw new UnsupportedOperationException();
+        }
+
         public Cursor<S> fetchOne(StorableIndex<S> index, Object[] identityValues) {
+            throw new UnsupportedOperationException();
+        }
+
+        public Cursor<S> fetchOne(StorableIndex<S> index, Object[] identityValues,
+                                  Query.Controller controller)
+        {
             throw new UnsupportedOperationException();
         }
 
@@ -273,6 +291,12 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             throw new UnsupportedOperationException();
         }
 
+        public Cursor<S> fetchFromIndexEntryQuery(StorableIndex<S> index, Query<?> indexEntryQuery,
+                                                  Query.Controller controller)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public Cursor<S> fetchSubset(StorableIndex<S> index,
                                      Object[] identityValues,
                                      BoundaryType rangeStartBoundary,
@@ -281,6 +305,19 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
                                      Object rangeEndValue,
                                      boolean reverseRange,
                                      boolean reverseOrder)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public Cursor<S> fetchSubset(StorableIndex<S> index,
+                                     Object[] identityValues,
+                                     BoundaryType rangeStartBoundary,
+                                     Object rangeStartValue,
+                                     BoundaryType rangeEndBoundary,
+                                     Object rangeEndValue,
+                                     boolean reverseRange,
+                                     boolean reverseOrder,
+                                     Query.Controller controller)
         {
             throw new UnsupportedOperationException();
         }
@@ -301,8 +338,16 @@ public class TestJoinedQueryExecutor extends TestQueryExecutor {
             return mQuery.count();
         }
 
+        public long countAll(Query.Controller controller) throws FetchException {
+            return mQuery.count(controller);
+        }
+
         public Cursor<S> fetchAll() throws FetchException {
             return mQuery.fetch();
+        }
+
+        public Cursor<S> fetchAll(Query.Controller controller) throws FetchException {
+            return mQuery.fetch(controller);
         }
     }
 }
