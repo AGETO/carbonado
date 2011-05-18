@@ -3475,7 +3475,7 @@ public class TestStorables extends TestCase {
             // Use filter to bypass optimizations.
             storage.query("id >= ?").with(0).count(Query.Timeout.millis(1));
             fail();
-        } catch (FetchInterruptedException e) {
+        } catch (FetchTimeoutException e) {
         }
     }
 
@@ -3509,7 +3509,7 @@ public class TestStorables extends TestCase {
                 cursor.next();
             }
             fail();
-        } catch (FetchInterruptedException e) {
+        } catch (FetchTimeoutException e) {
         }
     }
 

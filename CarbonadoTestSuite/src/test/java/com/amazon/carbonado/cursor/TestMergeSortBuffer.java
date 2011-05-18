@@ -155,7 +155,7 @@ public class TestMergeSortBuffer extends TestCase {
             testBuffer(null, HUGE_BUFFER_SIZE, Query.Timeout.millis(100));
             fail();
         } catch (UndeclaredThrowableException e) {
-            assertTrue(e.getCause() instanceof FetchInterruptedException);
+            assertTrue(e.getCause() instanceof FetchTimeoutException);
         }
     }
 

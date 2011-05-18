@@ -28,7 +28,7 @@ import junit.framework.TestSuite;
 
 import com.amazon.carbonado.Cursor;
 import com.amazon.carbonado.FetchException;
-import com.amazon.carbonado.FetchInterruptedException;
+import com.amazon.carbonado.FetchTimeoutException;
 import com.amazon.carbonado.Query;
 
 import com.amazon.carbonado.stored.Dummy;
@@ -457,7 +457,7 @@ public class TestCursors extends TestCase {
                 cursor.next();
             }
             fail();
-        } catch (FetchInterruptedException e) {
+        } catch (FetchTimeoutException e) {
             long end = System.nanoTime();
             assertTrue(inf.mClosed);
             double duration = (end - start) / 1000000000.0d;
