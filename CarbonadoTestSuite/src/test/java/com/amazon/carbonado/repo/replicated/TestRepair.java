@@ -373,6 +373,49 @@ public class TestRepair extends TestCase {
         }
     }
 
+    public void testDeletedEntry() throws Exception {
+        // Insert some entries into rr.
+        for (int i=0; i<10; i++) {
+            Storage<StorableTestBasic> storage = mReplicated.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(i);
+            stb.setStringProp("hello");
+            stb.setIntProp(1);
+            stb.setLongProp(1L);
+            stb.setDoubleProp(1.0);
+            stb.insert();
+        }
+
+        // Delete on record from from master.
+        {
+            Storage<StorableTestBasic> storage = mMaster.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(5);
+            stb.delete();
+        }
+
+        // Verify record is still available from rr.
+        {
+            Storage<StorableTestBasic> storage = mReplicated.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(5);
+            assertTrue(stb.tryLoad());
+            assertEquals("hello", stb.getStringProp());
+        }
+
+        ResyncCapability cap = mReplicated.getCapability(ResyncCapability.class);
+
+        cap.resync(StorableTestBasic.class, 1.0, "id=?", 5);
+
+        // Verify record is not available from rr anymore.
+        {
+            Storage<StorableTestBasic> storage = mReplicated.storageFor(StorableTestBasic.class);
+            StorableTestBasic stb = storage.prepare();
+            stb.setId(5);
+            assertFalse(stb.tryLoad());
+        }
+    }
+
     public void testCorruptEntry() throws Exception {
         testCorruptEntry(false, false);
     }
