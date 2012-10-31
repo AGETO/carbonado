@@ -389,6 +389,35 @@ public class TestFilteredCursor extends TestCase {
         assertEquals(expected.length, actualCount);
     }
 
+    public void testByteArrayFilter() throws Exception {
+        // Range comparison requires a special comparator to be used.
+
+        Repository repo = new ToyRepository();
+        Storage<ByteArrayRecord> storage = repo.storageFor(ByteArrayRecord.class);
+
+        byte[][] arrays = {{1}, {2}, {3}};
+
+        for (int i=0; i<arrays.length; i++) {
+            ByteArrayRecord rec = storage.prepare();
+            rec.setID(i);
+            rec.setArrayValue(arrays[i]);
+            rec.insert();
+        }
+
+        Filter<ByteArrayRecord> filter = Filter
+            .filterFor(ByteArrayRecord.class, "arrayValue < ?").bind();
+
+        Cursor<ByteArrayRecord> all = storage.query().fetch();
+
+        Cursor<ByteArrayRecord> filtered = FilteredCursor
+            .applyFilter(filter, filter.initialFilterValues().with(new byte[]{3}), all);
+
+        List<ByteArrayRecord> records = filtered.toList();
+        int actualCount = records.size();
+
+        assertEquals(2, actualCount);
+    }
+
     public void testExistsNoParams() throws Exception {
         Repository repo = new ToyRepository();
         Storage<Order> orders = repo.storageFor(Order.class);
@@ -862,5 +891,14 @@ public class TestFilteredCursor extends TestCase {
         @Nullable
         Double getDoubleValue();
         void setDoubleValue(Double value);
+    }
+
+    @PrimaryKey("ID")
+    public static interface ByteArrayRecord extends Storable {
+        int getID();
+        void setID(int id);
+
+        byte[] getArrayValue();
+        void setArrayValue(byte[] value);
     }
 }
