@@ -140,8 +140,10 @@ public class TestProxiedStorable extends TestStorableBase {
             getRepository().storageFor(StorableTestBasic.class);
         final Storage<StorableTestBasic> writage = altRepo.storageFor(StorableTestBasic.class);
 
+        final ReplicatedRepository rr = new ReplicatedRepository("test", getRepository(), altRepo);
+
         Storage<StorableTestBasic> wrappage =
-            new ReplicatedStorage<StorableTestBasic>(getRepository(), readage, writage);
+            new ReplicatedStorage<StorableTestBasic>(rr, readage, writage);
 
         StorableTestBasic replicator = wrappage.prepare();
 
